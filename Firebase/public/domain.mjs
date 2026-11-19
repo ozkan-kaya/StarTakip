@@ -1,7 +1,8 @@
 import partyLocations from './locations.mjs';
-import {companyVersions,currentCompany,appendCompanyVersion,regenerateCompany} from './company.mjs';
+import {companyVersions,currentCompany,appendCompanyVersion,regenerateCompany} from './company.mjs?v=app-20261119-1';
 // Generated from AileTakip/Code.gs. Edit the original business rules, then rebuild.
 export function createDomain(email) {
+const actorEmail=()=>typeof email==='function'?email():email;
 const copy=value=>JSON.parse(JSON.stringify(value));
 let database;
 const Utilities={getUuid:()=>crypto.randomUUID(),formatDate:(date)=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'}).format(date)};
@@ -503,7 +504,7 @@ function moduleStateFromModel_(model,scope){
 }
 
 function blankModel_(){return Object.fromEntries(Object.keys(HEADERS).map(name=>[name,[]]));}
-function withSessionLock_(token,action){return action(email);}
+function withSessionLock_(token,action){return action(actorEmail());}
 function model_(){return copy(database);}
 function commit_(changes){
  for(const c of changes){
@@ -515,19 +516,19 @@ function commit_(changes){
  }
 }
 const actions={saveUnit,saveMaster,deleteMaster,setMasterArchived,postTransaction,postStockCount,voidTransaction,saveNote};
-return {unitFractionsDefault,headers:HEADERS,blank:blankModel_,bootstrap:()=>appState_(email),
+return {unitFractionsDefault,headers:HEADERS,blank:blankModel_,bootstrap:()=>appState_(actorEmail()),
  validate(raw){const view=projectModel_(raw);checkStock_(view.transactions,view.products);return view;},
  views(raw){const view=this.validate(raw);return Object.assign({companyVersions:companyVersions(raw.FirmaSurumleri||[])},moduleStateFromModel_(view,'ledger'),moduleStateFromModel_(view,'notes'));},
  execute(action,input,raw){
    database=copy({...raw,FirmaSurumleri:raw.FirmaSurumleri||[]});
    const before=new Set(database.Islemler.map(row=>row.id));let result;
    if(action==='saveCompanyVersion'){
-     database.FirmaSurumleri=appendCompanyVersion(database.FirmaSurumleri,input,email);
+     database.FirmaSurumleri=appendCompanyVersion(database.FirmaSurumleri,input,actorEmail());
      result={firmaSurumu:currentCompany(database.FirmaSurumleri).surum};
    }else if(action==='regenerateCompanyDocument'){
      if(input.confirmed!==true)throw new Error('Belgeyi yeniden oluşturmak için onay gerekli.');
      const views=this.views(database),updates=copy(views.transactions);
-     result=regenerateCompany(updates,input.id,currentCompany(database.FirmaSurumleri).surum,email);
+     result=regenerateCompany(updates,input.id,currentCompany(database.FirmaSurumleri).surum,actorEmail());
      for(const row of database.Islemler){const updated=updates.find(t=>t.id===row.id);if(updated?.firmaSurumu){row.firmaSurumu=updated.firmaSurumu;row.firmaGecmisi=updated.firmaGecmisi||[];}}
    }else{
      if(!Object.hasOwn(actions,action))throw new Error('İşlem geçersiz.');

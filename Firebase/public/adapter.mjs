@@ -1,11 +1,11 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import {initializeAuth,GoogleAuthProvider,signInWithPopup,signOut,browserLocalPersistence,browserPopupRedirectResolver,connectAuthEmulator,onAuthStateChanged,reauthenticateWithPopup,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import * as firestore from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
-import {createDomain} from './domain.mjs';
-import {createStore} from './store.mjs';
-import {createPinSecurity} from './pin-security.mjs?v=pin-20261116-3';
-import {createFreshness} from './freshness.mjs';
-const OWNER='authorized-user@example.invalid';
+import {createDomain} from './domain.mjs?v=app-20261119-1';
+import {createStore} from './store.mjs?v=app-20261119-1';
+import {createPinSecurity} from './pin-security.mjs?v=app-20261119-1';
+import {createFreshness} from './freshness.mjs?v=app-20261119-1';
+const ALLOWED_EMAILS=new Set(['company@example.invalid','authorized-user@example.invalid']);
 export async function createFirebaseBridge(){
   const controller=new AbortController(),configTimer=setTimeout(()=>controller.abort(),12000);
   let config;
@@ -18,7 +18,7 @@ export async function createFirebaseBridge(){
   }
   let authTimer;
   try{await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{authTimer=setTimeout(()=>reject(new Error('Oturum kontrolü tamamlanamadı. Lütfen yeniden deneyin.')),12000);})]);}finally{clearTimeout(authTimer);}
-  const domain=createDomain(OWNER),security=createPinSecurity(firestore,db,user),store=createStore(firestore,db,domain,security),subscriptions=new Map();
+  const domain=createDomain(()=>user().email.toLowerCase()),security=createPinSecurity(firestore,db,user),store=createStore(firestore,db,domain,security),subscriptions=new Map();
   let identity=auth.currentUser?.uid||'',generation=0,stopLastOperation=null;
   const bridge={onPatch:null,onError:null,security};
   const scopeNames={products:['products','units'],parties:['parties'],ledger:['products','units','parties','transactions','companyVersions'],notes:['notes'],company:['companyVersions']};
@@ -47,7 +47,7 @@ export async function createFirebaseBridge(){
   function user(){
     const current=auth.currentUser;
     if(!current)throw new Error('AUTH_REQUIRED: Google hesabınızla giriş yapın.');
-    if(!current.emailVerified||current.email?.toLowerCase()!==OWNER||!current.providerData.some(p=>p.providerId==='google.com'))throw new Error('AUTH_DENIED: Bu Google hesabına erişim izni verilmemiş.');
+    if(!current.emailVerified||!ALLOWED_EMAILS.has(current.email?.toLowerCase())||!current.providerData.some(p=>p.providerId==='google.com'))throw new Error('AUTH_DENIED: Bu Google hesabına erişim izni verilmemiş.');
     return current;
   }
   const profile=()=>{const u=user();return {email:u.email,name:u.displayName||'Google hesabı',picture:u.photoURL||''};};

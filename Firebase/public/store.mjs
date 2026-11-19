@@ -1,4 +1,4 @@
-import {pinGroup,changeGroup} from './pin-security.mjs?v=pin-20261116-3';
+import {pinGroup,changeGroup} from './pin-security.mjs?v=app-20261119-1';
 export function revisionConflict(){const error=new Error('Veriler başka bir cihazdan güncellendi, yenilendi. Lütfen kontrol edip tekrar kaydedin.');error.code='STALE_REVISION';error.stale=true;return error;}
 // The same domain rules power Sheets and Firestore. Revision checking serializes
 // writes across clients without Cloud Functions or background polling.
@@ -92,7 +92,7 @@ export function createStore(api,db,domain,security=null) {
     const pinProofs=security?await security.proofs(grant,base.revision+1):{};
     await runTransaction(db,async transaction=>{
       const current=await transaction.get(metaRef);
-      if(security){const pinSnap=await transaction.get(doc(db,'security/pin'));if((pinSnap.exists()?pinSnap.data().version:0)!==grant.config.version)throw new Error('PIN ayarları değişti. İşlemi yeniden kaydedin.');}
+      if(security){const pinSnap=await transaction.get(security.configRef());if((pinSnap.exists()?pinSnap.data().version:0)!==grant.config.version)throw new Error('PIN ayarları değişti. İşlemi yeniden kaydedin.');}
       if(revision(current)!==base.revision)throw revisionConflict();
       for(const change of changes){const ref=doc(db,change.path);if(change.value===null)transaction.delete(ref);else transaction.set(ref,change.value);}
       if(changes.length)transaction.set(metaRef,{schemaVersion:9,companyVersion:view.companyVersions.at(-1).surum,revision:base.revision+1,expectedRevision:base.revision,updatedAt:serverTimestamp(),operation,pinProofs,pinLeaseId:grant?.leaseId||''});

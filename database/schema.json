@@ -144,18 +144,19 @@
         "companyVersion"
       ]
     },
-    "security/{document}": {
+    "pinChecks/{uid}": {},
+    "dailyPin/{uid}": {},
+    "pinLeases/{uid}/devices/{device}": {},
+    "pinLeaseInfo/{uid}/devices/{device}": {},
+    "userSecurity/{uid}/settings/{document}": {
       "documents": [
         "pin",
         "pin-secret",
         "pin-removal"
       ],
+      "scope": "authenticated user only; UID must match request.auth.uid",
       "containsPrivateSecurityMaterial": true
-    },
-    "pinChecks/{uid}": {},
-    "dailyPin/{uid}": {},
-    "pinLeases/{uid}/devices/{device}": {},
-    "pinLeaseInfo/{uid}/devices/{device}": {}
+    }
   },
   "recordsIncluded": false
 }

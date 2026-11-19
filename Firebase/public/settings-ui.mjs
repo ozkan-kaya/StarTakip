@@ -1,5 +1,5 @@
-import locations from './locations.mjs';
-import {companyFields,currentCompany,normalizeCompany,sameCompany} from './company.mjs';
+import locations from './locations.mjs?v=app-20261119-1';
+import {companyFields,currentCompany,normalizeCompany,sameCompany} from './company.mjs?v=app-20261119-1';
 export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   function make(id,title,body){
     const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog';dialog.setAttribute('aria-labelledby',id+'Title');

@@ -4,7 +4,13 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/*.py",
+      "**/*.patch*",
+      "**/*test*",
+      "migration.html",
+      "migration.mjs",
+      "config.example.json"
     ],
     "rewrites": [
       {

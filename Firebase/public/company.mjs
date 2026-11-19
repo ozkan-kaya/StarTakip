@@ -1,4 +1,4 @@
-import locations from './locations.mjs';
+import locations from './locations.mjs?v=app-20261119-1';
 export const initialCompany=Object.freeze({id:'1',surum:1,firmaAdi:'Örnek Firma',yetkiliAdi:'Yetkili',adres:'Örnek adres',telefon:'0000 000 00 00',eposta:'company@example.invalid'});
 export const companyFields=['firmaAdi','yetkiliAdi','adres','telefon','eposta','il','ilce'];
 export function normalizeCompany(input){

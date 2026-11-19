@@ -27,13 +27,13 @@ export function changeGroup(change,before){
 export function createPinSecurity(api,db,getUser,{storage}={}){
   if(storage===undefined){try{storage=globalThis.localStorage;}catch{storage=null;}}
   const {doc,getDocFromServer,runTransaction,writeBatch,serverTimestamp}=api;
-  const configRef=doc(db,'security/pin'),secretRef=doc(db,'security/pin-secret');
-  const security={requestPin:null};
+  const configRef=()=>doc(db,'userSecurity/'+getUser().uid+'/settings/pin'),secretRef=()=>doc(db,'userSecurity/'+getUser().uid+'/settings/pin-secret');
+  const security={requestPin:null,configRef};
   const cacheName=()=> 'star-pin-lease:'+getUser().uid;
   const clearLease=()=>{try{storage?.removeItem(cacheName());}catch{}};
   function readLease(config){try{const value=JSON.parse(storage?.getItem(cacheName())||'null');return value&&value.version===config.version&&value.salt===config.salt&&value.until>Date.now()?value:null;}catch{return null;}}
   security.clearCache=clearLease;
-  security.settings=async()=>{getUser();const s=await getDocFromServer(configRef);return s.exists()?s.data():defaultPinSettings();};
+  security.settings=async()=>{getUser();const s=await getDocFromServer(configRef());return s.exists()?s.data():defaultPinSettings();};
   security.check=async(pin,config)=>{
     const u=getUser(),current=config||await security.settings();if(!current.enabled)throw new Error('Önce PIN oluşturun.');
     const key=await pinKey(pin,current),nonce=crypto.randomUUID(),batch=writeBatch(db);
@@ -67,13 +67,13 @@ export function createPinSecurity(api,db,getUser,{storage}={}){
     if(mode==='settings'){
       const changes=options.changes||Object.fromEntries(['create','edit','remove','daily','interval'].map(g=>[g,options[g]]));
       await runTransaction(db,async tx=>{
-        const snap=await tx.get(configRef),current=snap.exists()?snap.data():defaultPinSettings();
+        const snap=await tx.get(configRef()),current=snap.exists()?snap.data():defaultPinSettings();
         if(!current.enabled||current.salt!==base.salt)throw new Error('PIN değişti. Ayarları yeniden açıp mevcut PIN’i girin.');
         const next={...current,version:current.version+1,mode,updatedAt:serverTimestamp()};
         for(const g of ['create','edit','remove','daily'])if(g in changes)next[g]=changes[g]===true;
         if('interval' in changes){next.interval=Number(changes.interval);if(![0,300,600,900,3600,10800].includes(next.interval))throw new Error('PIN sıklığı geçersiz.');}
         next.proof=await pinProof(options.oldKey,'settings',current.version,u.uid);
-        tx.set(configRef,next);
+        tx.set(configRef(),next);
       });
       clearLease();return security.settings();
     }
@@ -90,12 +90,12 @@ export function createPinSecurity(api,db,getUser,{storage}={}){
     const key=mode==='setup'||mode==='change'||mode==='reset'?await pinKey(options.pin,next):null;
     const settingsProof=options.oldKey?await pinProof(options.oldKey,'settings',base.version,u.uid):'';
     await runTransaction(db,async tx=>{
-      const snap=await tx.get(configRef),current=snap.exists()?snap.data():defaultPinSettings();
+      const snap=await tx.get(configRef()),current=snap.exists()?snap.data():defaultPinSettings();
       if(current.version!==base.version)throw new Error('PIN ayarları başka bir cihazda değişti. Ayarları yeniden açın.');
       if(mode==='setup'&&current.enabled)throw new Error('PIN zaten oluşturulmuş.');
       next={...next,mode,proof:settingsProof};
-      tx.set(configRef,next);
-      if(key)tx.set(secretRef,{verifier:key,version:next.version});
+      tx.set(configRef(),next);
+      if(key)tx.set(secretRef(),{verifier:key,version:next.version});
     });
     clearLease();return security.settings();
   }
@@ -109,8 +109,8 @@ export function createPinSecurity(api,db,getUser,{storage}={}){
   security.remove=async({base,oldKey})=>{
     const uid=getUser().uid,proof=await pinProof(oldKey,'remove-pin',base.version,uid);
     await runTransaction(db,async tx=>{
-      const snap=await tx.get(configRef);if(!snap.exists()||snap.data().version!==base.version)throw new Error('PIN ayarları değişti. Ayarları yeniden açın.');
-      tx.set(doc(db,'security/pin-removal'),{version:base.version,proof,updatedAt:serverTimestamp()});tx.delete(configRef);tx.delete(secretRef);
+      const snap=await tx.get(configRef());if(!snap.exists()||snap.data().version!==base.version)throw new Error('PIN ayarları değişti. Ayarları yeniden açın.');
+      tx.set(doc(db,'userSecurity/'+uid+'/settings/pin-removal'),{version:base.version,proof,updatedAt:serverTimestamp()});tx.delete(configRef());tx.delete(secretRef());
     });clearLease();return defaultPinSettings();
   };
   security.setup=options=>write('setup',options);

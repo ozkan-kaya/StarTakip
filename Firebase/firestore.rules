@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function owner() {
       return request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.email == 'authorized-user@example.invalid'
+        && request.auth.token.email in ['company@example.invalid','authorized-user@example.invalid']
         && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
     function advanced() {
@@ -14,19 +14,19 @@ service cloud.firestore {
         && next.revision == (exists(/databases/$(database)/documents/system/state)
           ? get(/databases/$(database)/documents/system/state).data.revision + 1 : 1);
     }
-    function hasPin() { return exists(/databases/$(database)/documents/security/pin); }
+    function hasPin() { return exists(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin); }
     function digest(key,purpose,version) {
       return hashing.sha256(key + ':' + purpose + ':' + string(version) + ':' + request.auth.uid).toHexString().lower();
     }
     function pinGate(group) {
       let next = getAfter(/databases/$(database)/documents/system/state).data;
-      return !hasPin() || !get(/databases/$(database)/documents/security/pin).data[group]
-        || next.get('pinProofs',{}).get(group,'') == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'write:' + group,next.revision)
+      return !hasPin() || !get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data[group]
+        || next.get('pinProofs',{}).get(group,'') == digest(get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret).data.verifier,'write:' + group,next.revision)
         || (next.get('pinLeaseId','') != '' && leaseGate(group,next));
     }
     function leaseGate(group,next) {
       let lease=get(/databases/$(database)/documents/pinLeases/$(request.auth.uid)/devices/$(next.pinLeaseId)).data;
-      let config=get(/databases/$(database)/documents/security/pin).data;
+      let config=get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
       return group != 'remove' && lease.version == config.version && lease.salt == config.salt && lease.interval == config.interval && lease.interval > 0
         && request.time < lease.createdAt + duration.value(lease.interval,'s')
         && next.get('pinProofs',{}).get(group,'') == digest(lease.key,'write:' + group,next.revision);
@@ -48,13 +48,13 @@ service cloud.firestore {
         && next.mode in ['setup','settings','change','reset'] && next.proof is string;
     }
     function changedSecret(next) {
-      let secret = getAfter(/databases/$(database)/documents/security/pin-secret).data;
+      let secret = getAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret).data;
       return secret.keys().hasOnly(['verifier','version']) && secret.verifier is string && secret.verifier.matches('^[a-f0-9]{64}$') && secret.version == next.version;
     }
     function pinSettingsAllowed() {
-      let next = getAfter(/databases/$(database)/documents/security/pin).data;
-      let old = get(/databases/$(database)/documents/security/pin).data;
-      let oldKey = get(/databases/$(database)/documents/security/pin-secret).data.verifier;
+      let next = getAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
+      let old = get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
+      let oldKey = get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret).data.verifier;
       return validPinConfig(next) && next.version == old.version + 1
         && ((next.mode == 'settings' && next.proof == digest(oldKey,'settings',old.version)
              && next.length == old.length && next.salt == old.salt)
@@ -64,38 +64,38 @@ service cloud.firestore {
              && next.create == old.create && next.edit == old.edit && next.remove == old.remove && next.interval == old.interval && next.daily == old.daily && changedSecret(next)));
     }
     function pinSetupAllowed() {
-      let next = getAfter(/databases/$(database)/documents/security/pin).data;
+      let next = getAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
       return validPinConfig(next) && next.version == 1 && next.mode == 'setup' && changedSecret(next);
     }
     function pinRemovalAllowed() {
-      let old = get(/databases/$(database)/documents/security/pin).data;
-      let removal = getAfter(/databases/$(database)/documents/security/pin-removal).data;
-      return hasPin() && !existsAfter(/databases/$(database)/documents/security/pin)
-        && !existsAfter(/databases/$(database)/documents/security/pin-secret)
+      let old = get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
+      let removal = getAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-removal).data;
+      return hasPin() && !existsAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin)
+        && !existsAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret)
         && removal.keys().hasOnly(['version','proof','updatedAt']) && removal.version == old.version && removal.updatedAt == request.time
-        && removal.proof == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'remove-pin',old.version);
+        && removal.proof == digest(get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret).data.verifier,'remove-pin',old.version);
     }
-    match /security/pin-removal {
+    match /userSecurity/{uid}/settings/pin-removal {
       allow read: if false;
-      allow create,update: if owner() && pinRemovalAllowed();
+      allow create,update: if owner() && uid == request.auth.uid && pinRemovalAllowed();
       allow delete: if false;
     }
-    match /security/pin {
-      allow read: if owner();
-      allow create: if owner() && pinSetupAllowed();
-      allow update: if owner() && pinSettingsAllowed();
-      allow delete: if owner() && pinRemovalAllowed();
+    match /userSecurity/{uid}/settings/pin {
+      allow read: if owner() && uid == request.auth.uid;
+      allow create: if owner() && uid == request.auth.uid && pinSetupAllowed();
+      allow update: if owner() && uid == request.auth.uid && pinSettingsAllowed();
+      allow delete: if owner() && uid == request.auth.uid && pinRemovalAllowed();
     }
-    match /security/pin-secret {
+    match /userSecurity/{uid}/settings/pin-secret {
       allow read: if false;
-      allow create,update: if owner() && ((!hasPin() && pinSetupAllowed()) || (hasPin() && pinSettingsAllowed() && getAfter(/databases/$(database)/documents/security/pin).data.mode in ['change','reset']));
-      allow delete: if owner() && pinRemovalAllowed();
+      allow create,update: if owner() && uid == request.auth.uid && ((!hasPin() && pinSetupAllowed()) || (hasPin() && pinSettingsAllowed() && getAfter(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.mode in ['change','reset']));
+      allow delete: if owner() && uid == request.auth.uid && pinRemovalAllowed();
     }
     function validCheck(uid) {
       let check=getAfter(/databases/$(database)/documents/pinChecks/$(uid)).data;
-      let config=get(/databases/$(database)/documents/security/pin).data;
+      let config=get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data;
       return check.updatedAt == request.time && check.version == config.version
-        && check.proof == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'check:' + check.nonce,check.version);
+        && check.proof == digest(get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin-secret).data.verifier,'check:' + check.nonce,check.version);
     }
     match /pinChecks/{uid} {
       allow read,delete: if false;
@@ -109,8 +109,8 @@ service cloud.firestore {
       allow create,update: if owner() && uid == request.auth.uid && validCheck(uid)
         && request.resource.data.keys().hasOnly(['version','salt','updatedAt'])
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.version == get(/databases/$(database)/documents/security/pin).data.version
-        && request.resource.data.salt == get(/databases/$(database)/documents/security/pin).data.salt;
+        && request.resource.data.version == get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.version
+        && request.resource.data.salt == get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.salt;
     }
     match /pinLeases/{uid}/devices/{device} {
       allow read,delete: if false;
@@ -118,9 +118,9 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['key','version','salt','interval','createdAt'])
         && request.resource.data.key is string && request.resource.data.key.matches('^[a-f0-9]{64}$')
         && request.resource.data.createdAt == request.time
-        && request.resource.data.version == get(/databases/$(database)/documents/security/pin).data.version
-        && request.resource.data.salt == get(/databases/$(database)/documents/security/pin).data.salt
-        && request.resource.data.interval == get(/databases/$(database)/documents/security/pin).data.interval && request.resource.data.interval > 0;
+        && request.resource.data.version == get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.version
+        && request.resource.data.salt == get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.salt
+        && request.resource.data.interval == get(/databases/$(database)/documents/userSecurity/$(request.auth.uid)/settings/pin).data.interval && request.resource.data.interval > 0;
     }
     match /pinLeaseInfo/{uid}/devices/{device} {
       allow get: if owner() && uid == request.auth.uid;

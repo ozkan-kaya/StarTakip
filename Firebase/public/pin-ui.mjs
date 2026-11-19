@@ -1,4 +1,4 @@
-import {installSettingsUI} from './settings-ui.mjs';
+import {installSettingsUI} from './settings-ui.mjs?v=app-20261119-1';
 export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=>{},company}={}){
   const make=(id,title,body)=>{
     const d=document.createElement('dialog');d.id=id;d.className='record-dialog compact-dialog pin-dialog';

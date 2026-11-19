@@ -1,27 +1,35 @@
 # StarTakip
 
-Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanan cari, stok ve işlem takip uygulamasının kişisel bilgilerden arındırılmış kaynak kodu.
+Cari, stok ve işlem takip uygulaması — **v1.2.0**.
+Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 
-## İçerik
+## Dosyalar
 
-- `Firebase/public/`: arayüz, iş kuralları, kayıt katmanı, PIN güvenliği ve PDF araçları
-- `Firebase/firestore.rules`: erişim ve veri yazma kuralları
-- `Firebase/firestore.indexes.json`: Firestore indeks tanımları
-- `database/schema.json`: boş veritabanı şeması; gerçek kayıt içermez
+- `Firebase/public/`: çalışan uygulama, iş kuralları, PIN güvenliği ve PDF araçları
+- `Firebase/firestore.rules`: kullanıcı erişimi, kişisel PIN alanları ve değiştirilemez firma sürümleri
+- `Firebase/firestore.indexes.json`: veritabanı indeksleri
+- `database/schema.json`: boş veritabanı şeması; gerçek iş kayıtları içermez
 
-## Yerel yapılandırma
+## Kurulum
 
 1. Firebase projesinde Google girişini, Firestore Standard veritabanını ve Hosting'i etkinleştirin.
-2. `Firebase/public/config.example.json` dosyasını `config.json` adıyla kopyalayıp kendi Firebase web yapılandırmanızı girin; bu yerel dosya Git tarafından dışlanır.
-3. `Firebase/.firebaserc.example` dosyasını `.firebaserc` olarak kopyalayıp proje kimliğinizi girin.
-4. `Firebase/public/adapter.mjs` ve `Firebase/firestore.rules` içindeki `authorized-user@example.invalid` adresini kendi izinli hesabınızla değiştirin; istemci ve sunucu kuralları aynı kullanıcıya izin vermelidir.
-5. Firma başlangıç değerleri örnektir; `company.mjs` ve kurallardaki v1 değerleri birlikte uyarlanmalıdır, kaydedilmiş eski sürümler değiştirilmemelidir.
-6. Kendi Firebase CLI hesabınızla giriş yapıp `Firebase` klasöründen yerel yapılandırmanızla çalışın; kaynak kodunu GitHub'a göndermek Firebase'e otomatik yayın yapmaz.
+2. `Firebase/public/config.example.json` dosyasını `config.json` olarak kopyalayıp kendi Firebase web ayarlarınızı girin.
+3. `Firebase/.firebaserc.example` dosyasını `.firebaserc` olarak kopyalayıp proje kimliğini girin; `Firebase/firebase.json` içindeki `hosting.site` alanını da kendi site kimliğinizle değiştirin.
+4. `adapter.mjs` ve `firestore.rules` içindeki örnek izinli hesapları birlikte düzenleyin; istemci kontrolü ve veritabanı kuralları aynı hesaplara izin vermelidir.
+5. Firma başlangıç bilgileri örnek değerlerdir; `company.mjs` ve kurallardaki v1 değerlerini birlikte uyarlayın, kaydedilmiş geçmiş sürümleri değiştirmeyin.
+6. Firebase CLI ile kendi hesabınızdan giriş yapın; `Firebase` klasöründen yalnız Hosting, Firestore kuralları ve indeksleri yayınlayın.
 
-## Veri ve güvenlik
+## Güvenlik ve ortak veriler
 
-Gerçek Firestore kayıtları, kullanıcı bilgileri, PIN doğrulayıcıları, şifreler, özel anahtarlar, oturum dosyaları, API anahtarları ve asıl proje yapılandırması bu depoya dahil edilmemiştir.
-Bu kaynak anlık görüntüsünde tek hesap için erişim kontrolü ve ortak PIN yapılandırması bulunur; iki kullanıcıya ayrı PIN desteği henüz uygulanmış değildir.
-`.env` veya Git dışlama, tarayıcıya gönderilen ayarları gizli hale getirmez; veri erişimi Authentication ve Firestore kurallarıyla korunur.
+- İzinli hesaplar Google girişi ve Firestore kurallarıyla sınırlandırılır.
+- PIN ve işlem güvenliği ayarları `userSecurity/{uid}/settings/` altında kullanıcıya özeldir; kullanıcılar birbirinin PIN ayarını okuyamaz veya değiştiremez.
+- Firma sürümleri ve ticari veriler izinli kullanıcılar arasında ortaktır; kesinleşmiş belgeler firma sürümünü saklar.
+- Gerçek kayıtlar, kişisel iletişim bilgileri, gerçek API anahtarları, şifreler, özel anahtarlar, oturum dosyaları ve asıl Firebase yapılandırması GitHub'a dahil edilmez; yerel ayarlar `.gitignore` ile dışlanır.
+- `.env` kullanmak tarayıcıya gönderilen ayarları gizlemez; veri erişimini Authentication ve sunucu kuralları korur.
 
-`vendor/` içindeki üçüncü taraf kütüphanelerin lisansları ilgili dosyalarla birlikte korunmuştur.
+## Sürüm kontrolü
+
+`v1.2.0`: iki izinli hesap, kullanıcıya özel PIN/işlem güvenliği ve ortak sürümlü firma bilgileriyle Firebase yayın sürümü.
+Kaynak kodunu GitHub'a push etmek tek başına Firebase'e yayın yapmaz.
+
+Üçüncü taraf PDF kütüphanelerinin lisansları `vendor/` içinde korunur.
