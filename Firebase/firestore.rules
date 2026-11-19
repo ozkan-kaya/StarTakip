@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email == 'authorized-user@example.invalid'
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    function advanced() {
+      let next = getAfter(/databases/$(database)/documents/system/state).data;
+      return next.schemaVersion == 9 && next.updatedAt == request.time
+        && next.get('expectedRevision',-1) == (exists(/databases/$(database)/documents/system/state)
+          ? get(/databases/$(database)/documents/system/state).data.revision : 0)
+        && next.revision == (exists(/databases/$(database)/documents/system/state)
+          ? get(/databases/$(database)/documents/system/state).data.revision + 1 : 1);
+    }
+    function hasPin() { return exists(/databases/$(database)/documents/security/pin); }
+    function digest(key,purpose,version) {
+      return hashing.sha256(key + ':' + purpose + ':' + string(version) + ':' + request.auth.uid).toHexString().lower();
+    }
+    function pinGate(group) {
+      let next = getAfter(/databases/$(database)/documents/system/state).data;
+      return !hasPin() || !get(/databases/$(database)/documents/security/pin).data[group]
+        || next.get('pinProofs',{}).get(group,'') == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'write:' + group,next.revision)
+        || (next.get('pinLeaseId','') != '' && leaseGate(group,next));
+    }
+    function leaseGate(group,next) {
+      let lease=get(/databases/$(database)/documents/pinLeases/$(request.auth.uid)/devices/$(next.pinLeaseId)).data;
+      let config=get(/databases/$(database)/documents/security/pin).data;
+      return group != 'remove' && lease.version == config.version && lease.salt == config.salt && lease.interval == config.interval && lease.interval > 0
+        && request.time < lease.createdAt + duration.value(lease.interval,'s')
+        && next.get('pinProofs',{}).get(group,'') == digest(lease.key,'write:' + group,next.revision);
+    }
+    function viewPinGate() {
+      let next = getAfter(/databases/$(database)/documents/system/state).data;
+      return pinGate(next.get('operation','edit'));
+    }
+    function recentGoogle() {
+      return request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.time.toMillis() - request.auth.token.auth_time * 1000 >= 0
+        && request.time.toMillis() - request.auth.token.auth_time * 1000 < 300000;
+    }
+    function validPinConfig(next) {
+      return next.keys().hasOnly(['enabled','length','salt','version','create','edit','remove','updatedAt','mode','proof','interval','daily'])
+        && next.enabled == true && next.length in [4,6] && next.salt is string && next.salt.matches('^[a-f0-9]{32}$')
+        && next.version is int && next.create is bool && next.edit is bool && next.remove is bool && next.updatedAt == request.time
+        && next.interval in [0,300,600,900,3600,10800] && next.daily is bool
+        && next.mode in ['setup','settings','change','reset'] && next.proof is string;
+    }
+    function changedSecret(next) {
+      let secret = getAfter(/databases/$(database)/documents/security/pin-secret).data;
+      return secret.keys().hasOnly(['verifier','version']) && secret.verifier is string && secret.verifier.matches('^[a-f0-9]{64}$') && secret.version == next.version;
+    }
+    function pinSettingsAllowed() {
+      let next = getAfter(/databases/$(database)/documents/security/pin).data;
+      let old = get(/databases/$(database)/documents/security/pin).data;
+      let oldKey = get(/databases/$(database)/documents/security/pin-secret).data.verifier;
+      return validPinConfig(next) && next.version == old.version + 1
+        && ((next.mode == 'settings' && next.proof == digest(oldKey,'settings',old.version)
+             && next.length == old.length && next.salt == old.salt)
+          || (next.mode == 'change' && next.proof == digest(oldKey,'settings',old.version)
+             && next.create == old.create && next.edit == old.edit && next.remove == old.remove && next.interval == old.interval && next.daily == old.daily && changedSecret(next))
+          || (next.mode == 'reset' && recentGoogle()
+             && next.create == old.create && next.edit == old.edit && next.remove == old.remove && next.interval == old.interval && next.daily == old.daily && changedSecret(next)));
+    }
+    function pinSetupAllowed() {
+      let next = getAfter(/databases/$(database)/documents/security/pin).data;
+      return validPinConfig(next) && next.version == 1 && next.mode == 'setup' && changedSecret(next);
+    }
+    function pinRemovalAllowed() {
+      let old = get(/databases/$(database)/documents/security/pin).data;
+      let removal = getAfter(/databases/$(database)/documents/security/pin-removal).data;
+      return hasPin() && !existsAfter(/databases/$(database)/documents/security/pin)
+        && !existsAfter(/databases/$(database)/documents/security/pin-secret)
+        && removal.keys().hasOnly(['version','proof','updatedAt']) && removal.version == old.version && removal.updatedAt == request.time
+        && removal.proof == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'remove-pin',old.version);
+    }
+    match /security/pin-removal {
+      allow read: if false;
+      allow create,update: if owner() && pinRemovalAllowed();
+      allow delete: if false;
+    }
+    match /security/pin {
+      allow read: if owner();
+      allow create: if owner() && pinSetupAllowed();
+      allow update: if owner() && pinSettingsAllowed();
+      allow delete: if owner() && pinRemovalAllowed();
+    }
+    match /security/pin-secret {
+      allow read: if false;
+      allow create,update: if owner() && ((!hasPin() && pinSetupAllowed()) || (hasPin() && pinSettingsAllowed() && getAfter(/databases/$(database)/documents/security/pin).data.mode in ['change','reset']));
+      allow delete: if owner() && pinRemovalAllowed();
+    }
+    function validCheck(uid) {
+      let check=getAfter(/databases/$(database)/documents/pinChecks/$(uid)).data;
+      let config=get(/databases/$(database)/documents/security/pin).data;
+      return check.updatedAt == request.time && check.version == config.version
+        && check.proof == digest(get(/databases/$(database)/documents/security/pin-secret).data.verifier,'check:' + check.nonce,check.version);
+    }
+    match /pinChecks/{uid} {
+      allow read,delete: if false;
+      allow create,update: if owner() && uid == request.auth.uid && hasPin()
+        && request.resource.data.keys().hasOnly(['nonce','version','proof','updatedAt'])
+        && request.resource.data.nonce is string && request.resource.data.nonce.size() == 36 && validCheck(uid);
+    }
+    match /dailyPin/{uid} {
+      allow get: if owner() && uid == request.auth.uid;
+      allow list,delete: if false;
+      allow create,update: if owner() && uid == request.auth.uid && validCheck(uid)
+        && request.resource.data.keys().hasOnly(['version','salt','updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.version == get(/databases/$(database)/documents/security/pin).data.version
+        && request.resource.data.salt == get(/databases/$(database)/documents/security/pin).data.salt;
+    }
+    match /pinLeases/{uid}/devices/{device} {
+      allow read,delete: if false;
+      allow create,update: if owner() && uid == request.auth.uid && validCheck(uid)
+        && request.resource.data.keys().hasOnly(['key','version','salt','interval','createdAt'])
+        && request.resource.data.key is string && request.resource.data.key.matches('^[a-f0-9]{64}$')
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.version == get(/databases/$(database)/documents/security/pin).data.version
+        && request.resource.data.salt == get(/databases/$(database)/documents/security/pin).data.salt
+        && request.resource.data.interval == get(/databases/$(database)/documents/security/pin).data.interval && request.resource.data.interval > 0;
+    }
+    match /pinLeaseInfo/{uid}/devices/{device} {
+      allow get: if owner() && uid == request.auth.uid;
+      allow list,delete: if false;
+      allow create,update: if owner() && uid == request.auth.uid && validCheck(uid)
+        && request.resource.data.keys().hasOnly(['version','salt','interval','createdAt'])
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.version == getAfter(/databases/$(database)/documents/pinLeases/$(uid)/devices/$(device)).data.version
+        && request.resource.data.salt == getAfter(/databases/$(database)/documents/pinLeases/$(uid)/devices/$(device)).data.salt
+        && request.resource.data.interval == getAfter(/databases/$(database)/documents/pinLeases/$(uid)/devices/$(device)).data.interval;
+    }
+    function validCompanyAdvance() {
+      let old = exists(/databases/$(database)/documents/system/state) ? get(/databases/$(database)/documents/system/state).data.get('companyVersion',1) : 1;
+      let next = request.resource.data.get('companyVersion',1);
+      return next is int && (next == old || (next == old + 1
+        && !exists(/databases/$(database)/documents/companyVersions/$(string(next)))
+        && existsAfter(/databases/$(database)/documents/companyVersions/$(string(next)))));
+    }
+    match /companyVersions/{id} {
+      allow read: if owner();
+      allow create: if owner() && advanced() && pinGate('create')
+        && request.resource.data.keys().hasOnly(['id','surum','firmaAdi','yetkiliAdi','adres','telefon','eposta','il','ilce','olusturan','olusturmaZamani','_row'])
+        && request.resource.data.id == id && request.resource.data.surum is int
+        && id == string(request.resource.data.surum)
+        && request.resource.data.firmaAdi is string && request.resource.data.firmaAdi.size() > 0 && request.resource.data.firmaAdi.size() <= 200
+        && request.resource.data.yetkiliAdi is string && request.resource.data.yetkiliAdi.size() <= 200
+        && request.resource.data.adres is string && request.resource.data.adres.size() <= 1000
+        && request.resource.data.get('il','') is string && request.resource.data.get('il','').size() <= 200
+        && request.resource.data.get('ilce','') is string && request.resource.data.get('ilce','').size() <= 200
+        && request.resource.data.telefon is string && request.resource.data.telefon.size() <= 200
+        && request.resource.data.eposta is string && request.resource.data.eposta.size() <= 200
+        && ((id == '1' && request.resource.data.get('il','') == '' && request.resource.data.get('ilce','') == '' && request.resource.data.firmaAdi == 'Örnek Firma'
+          && request.resource.data.yetkiliAdi == 'Yetkili'
+          && request.resource.data.adres == 'Örnek adres'
+          && request.resource.data.telefon == '0000 000 00 00' && request.resource.data.eposta == 'company@example.invalid')
+          || (request.resource.data.surum > 1
+            && request.resource.data.surum == getAfter(/databases/$(database)/documents/system/state).data.companyVersion
+            && existsAfter(/databases/$(database)/documents/companyVersions/$(string(request.resource.data.surum - 1)))));
+      allow update,delete: if false;
+    }
+    match /system/state {
+      allow read: if owner();
+      allow create, update: if owner() && advanced()
+        && request.resource.data.keys().hasOnly(['schemaVersion','revision','expectedRevision','updatedAt','operation','pinProofs','pinLeaseId','companyVersion'])
+        && request.resource.data.get('operation','edit') in ['create','edit','remove']
+        && validCompanyAdvance();
+      allow delete: if false;
+    }
+    match /tables/{tableName}/rows/{id} {
+      allow read: if owner();
+      allow create: if owner() && advanced() && tableName in
+        ['Birimler','Urunler','Cariler','Kullanicilar','Islemler','UrunHareketleri','CariAcilislari','Odemeler','OdemeBelgeleri','IslemIptalleri','Notlar']
+        && (tableName == 'Kullanicilar' || pinGate(tableName == 'IslemIptalleri' ? 'remove' : 'create'));
+      allow update: if owner() && advanced() && tableName in
+        ['Birimler','Urunler','Cariler','Kullanicilar','Islemler','UrunHareketleri','CariAcilislari','Odemeler','OdemeBelgeleri','IslemIptalleri','Notlar']
+        && pinGate((tableName in ['Urunler','Cariler'] && resource.data.get('arsivlendiMi',false) != request.resource.data.get('arsivlendiMi',false)) || tableName == 'IslemIptalleri' ? 'remove' : 'edit');
+      allow delete: if owner() && advanced() && tableName in ['Urunler','Cariler'] && pinGate('remove');
+    }
+    match /views/{scope}/rows/{id} {
+      allow read: if owner();
+      allow create, update: if owner() && advanced() && viewPinGate() && scope in ['products','parties','transactions','notes']
+        && request.resource.data.id == id
+        && (scope != 'products' || (request.resource.data.stock is number && request.resource.data.stock >= 0));
+      allow delete: if owner() && advanced() && pinGate('remove') && scope in ['products','parties','transactions','notes'];
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

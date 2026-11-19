@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 9,
+  "collections": {
+    "tables/{table}/rows/{id}": {
+      "tables": {
+        "FirmaSurumleri": [
+          "id",
+          "surum",
+          "firmaAdi",
+          "yetkiliAdi",
+          "adres",
+          "telefon",
+          "eposta",
+          "il",
+          "ilce",
+          "olusturan",
+          "olusturmaZamani"
+        ],
+        "Birimler": [
+          "id",
+          "ad",
+          "ondalikliMi"
+        ],
+        "Urunler": [
+          "id",
+          "kod",
+          "ad",
+          "birimId",
+          "satisFiyati",
+          "kritikStok",
+          "paraBirimi",
+          "arsivlendiMi",
+          "arsivlenmeZamani",
+          "arsivleyenId"
+        ],
+        "Cariler": [
+          "id",
+          "ad",
+          "kisiAdi",
+          "telefon",
+          "not",
+          "adres",
+          "eposta",
+          "il",
+          "ilce",
+          "arsivlendiMi",
+          "arsivlenmeZamani",
+          "arsivleyenId"
+        ],
+        "Kullanicilar": [
+          "id",
+          "eposta"
+        ],
+        "Islemler": [
+          "id",
+          "tarih",
+          "tur",
+          "cariId",
+          "aciklama",
+          "olusturanId",
+          "olusturmaZamani",
+          "paraBirimi",
+          "islemNo",
+          "fisGrupId",
+          "firmaSurumu",
+          "firmaGecmisi"
+        ],
+        "UrunHareketleri": [
+          "id",
+          "islemId",
+          "sira",
+          "urunId",
+          "adet",
+          "birimFiyat",
+          "sayimOncekiMiktar",
+          "sayilanMiktar"
+        ],
+        "CariAcilislari": [
+          "islemId",
+          "tutar"
+        ],
+        "Odemeler": [
+          "islemId",
+          "yontem",
+          "tutar",
+          "urunIslemId"
+        ],
+        "OdemeBelgeleri": [
+          "islemId",
+          "belgeNo",
+          "vade"
+        ],
+        "IslemIptalleri": [
+          "islemId",
+          "neden",
+          "kullaniciId",
+          "zaman"
+        ],
+        "Notlar": [
+          "id",
+          "baslik",
+          "icerik",
+          "olusturanId",
+          "olusturmaZamani",
+          "guncelleyenId",
+          "guncellemeZamani",
+          "surum"
+        ]
+      }
+    },
+    "companyVersions/{version}": {
+      "fields": [
+        "id",
+        "surum",
+        "firmaAdi",
+        "yetkiliAdi",
+        "adres",
+        "telefon",
+        "eposta",
+        "il",
+        "ilce",
+        "olusturan",
+        "olusturmaZamani"
+      ],
+      "appendOnly": true
+    },
+    "views/{scope}/rows/{id}": {
+      "scopes": [
+        "products",
+        "parties",
+        "transactions",
+        "notes"
+      ]
+    },
+    "system/state": {
+      "fields": [
+        "schemaVersion",
+        "revision",
+        "expectedRevision",
+        "updatedAt",
+        "operation",
+        "pinProofs",
+        "pinLeaseId",
+        "companyVersion"
+      ]
+    },
+    "security/{document}": {
+      "documents": [
+        "pin",
+        "pin-secret",
+        "pin-removal"
+      ],
+      "containsPrivateSecurityMaterial": true
+    },
+    "pinChecks/{uid}": {},
+    "dailyPin/{uid}": {},
+    "pinLeases/{uid}/devices/{device}": {},
+    "pinLeaseInfo/{uid}/devices/{device}": {}
+  },
+  "recordsIncluded": false
+}
