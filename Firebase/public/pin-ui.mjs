@@ -1,7 +1,7 @@
 import {installSettingsUI} from './settings-ui.mjs?v=app-20261119-1';
 export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=>{},company}={}){
   const make=(id,title,body)=>{
-    const d=document.createElement('dialog');d.id=id;d.className='record-dialog compact-dialog pin-dialog';
+    const d=document.createElement('dialog');d.id=id;d.className='record-dialog compact-dialog pin-dialog'+(id==='pinRemoveDialog'?' dialog-compact':'');
     d.innerHTML='<div class="detail-header"><div><button type="button" class="detail-back" data-back>← Geri</button><div class="eyebrow">Güvenlik</div><h2>'+title+'</h2></div><button type="button" class="detail-close" aria-label="Kapat">×</button></div><div class="detail-body">'+body+'</div>';
     document.body.append(d);d.querySelector('.detail-close').onclick=()=>d.close();return d;
   };
@@ -10,7 +10,7 @@ export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=
   const securityScreens=[];let activeSecurityScreen=null;
   function activateSecurityScreen(screen){
     for(const other of securityScreens){other.hidden=other!==screen;other.toggleAttribute('open',other===screen);}
-    activeSecurityScreen=screen;securityDialog.setAttribute('aria-labelledby',screen.id+'Title');
+    activeSecurityScreen=screen;securityDialog.classList.toggle('dialog-compact',screen.id==='pinChangeConfirmDialog');securityDialog.setAttribute('aria-labelledby',screen.id+'Title');
     if(!securityDialog.open)securityDialog.showModal();
     screen.querySelector('.detail-body').scrollTop=0;
   }

@@ -2,7 +2,7 @@ import locations from './locations.mjs?v=app-20261119-1';
 import {companyFields,currentCompany,normalizeCompany,sameCompany} from './company.mjs?v=app-20261119-1';
 export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   function make(id,title,body){
-    const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog';dialog.setAttribute('aria-labelledby',id+'Title');
+    const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog'+(id==='companyRegenerateDialog'?' dialog-compact':'');dialog.setAttribute('aria-labelledby',id+'Title');
     dialog.innerHTML='<div class="detail-header"><div><button type="button" class="detail-back" data-back>← Geri</button><div class="eyebrow">Ayarlar</div><h2 id="'+id+'Title">'+title+'</h2></div><button type="button" class="detail-close" aria-label="Kapat">×</button></div><div class="detail-body">'+body+'</div>';
     dialog.querySelector('.detail-close').onclick=()=>dialog.close();
     let outsideStart=false;
