@@ -1,6 +1,6 @@
 # StarTakip
 
-Cari, stok ve işlem takip uygulaması — **v1.2.1**.
+Cari, stok ve işlem takip uygulaması — **v1.3.0**.
 Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 
 ## Dosyalar
@@ -28,6 +28,8 @@ Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 - `.env` kullanmak tarayıcıya gönderilen ayarları gizlemez; veri erişimini Authentication ve sunucu kuralları korur.
 
 ## Sürüm kontrolü
+
+`v1.3.0`: belge sürümü seçimi, güncellenen fiş ve PDF düzeni, kompakt onay pencereleri.
 
 `v1.2.1`: profil fotoğrafının yuvarlak alan içinde merkezlenmesi; iki izinli hesap, kullanıcıya özel PIN/işlem güvenliği ve ortak sürümlü firma bilgileriyle Firebase yayın sürümü.
 Kaynak kodunu GitHub'a push etmek tek başına Firebase'e yayın yapmaz.
