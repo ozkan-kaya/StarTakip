@@ -2,7 +2,7 @@ import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-
 import {initializeAuth,GoogleAuthProvider,signInWithPopup,signOut,browserLocalPersistence,browserPopupRedirectResolver,connectAuthEmulator,onAuthStateChanged,reauthenticateWithPopup,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import * as firestore from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 import {createDomain} from './domain.mjs?v=app-20261119-1';
-import {createStore} from './store.mjs?v=app-20261119-1';
+import {createStore} from './store.mjs?v=app-20261120-1';
 import {createPinSecurity} from './pin-security.mjs?v=app-20261119-1';
 import {createFreshness} from './freshness.mjs?v=app-20261119-1';
 const ALLOWED_EMAILS=new Set(['company@example.invalid','authorized-user@example.invalid']);
@@ -83,10 +83,9 @@ export async function createFirebaseBridge(){
   }
   // Start after the UI unlocks. History and notes keep their on-demand subscriptions.
   bridge.prefetch=async()=>{user();watchLastOperation();return Promise.allSettled(['products','units','parties'].map(subscribe));};
-  async function execute(action,data,expectedRevision){
+  async function execute(action,data){
     if(!navigator.onLine)throw new Error('İnternet bağlantınızı kontrol ediniz.');
-    if(!Number.isInteger(expectedRevision))throw new Error('Veriler doğrulanamadı. Lütfen ekranı yeniden açıp kaydedin.');
-    const result=await store.execute(action,data,{expectedRevision}),patch={updatedAt:new Date().toISOString(),dataRevision:result.revision};
+    const result=await store.execute(action,data),patch={updatedAt:new Date().toISOString(),dataRevision:result.revision};
     freshness.committed(result.revision);
     // Only publish committed data; direct legacy calls (delete/bulk rows) also
     // update the opened scope cache before their callers refresh the screen.
@@ -110,11 +109,11 @@ export async function createFirebaseBridge(){
     if(name==='mutateAndRead'){
       if(!navigator.onLine)throw new Error('İnternet bağlantınızı kontrol ediniz.');
       if(!Array.isArray(arg.scopes)||arg.scopes.some(scope=>!['products','parties','ledger','notes','company'].includes(scope)))throw new Error('Veri bölümü geçersiz.');
-      const result=await execute(arg.action,arg.data,arg.expectedRevision),patch={updatedAt:new Date().toISOString(),dataRevision:result.revision};
+      const result=await execute(arg.action,arg.data),patch={updatedAt:new Date().toISOString(),dataRevision:result.revision};
       for(const scope of arg.scopes){const names={products:['products','units'],parties:['parties'],ledger:['products','units','parties','transactions','companyVersions'],notes:['notes'],company:['companyVersions']}[scope];for(const name of names)patch[name]=result.view[name];}
       return {result:result.result,patch};
     }
-    if(['saveUnit','saveMaster','deleteMaster','setMasterArchived','postTransaction','postStockCount','voidTransaction','saveNote','saveCompanyVersion','regenerateCompanyDocument'].includes(name))return (await execute(name,arg,freshness.revision)).result;
+    if(['saveUnit','saveMaster','deleteMaster','setMasterArchived','postTransaction','postStockCount','voidTransaction','saveNote','saveCompanyVersion','regenerateCompanyDocument'].includes(name))return (await execute(name,arg)).result;
     throw new Error('İşlem geçersiz.');
   };
   bridge.export=()=>{user();return store.export();};

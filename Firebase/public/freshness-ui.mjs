@@ -1,4 +1,3 @@
-const conflictText='Veriler başka bir cihazdan güncellendi, yenilendi. Lütfen kontrol edip tekrar kaydedin.';
 export function preserveForms(draw){
   const dialogs=[...document.querySelectorAll('dialog[open]')].filter(d=>!d.id.startsWith('pin'));
   const fields=dialogs.flatMap(dialog=>[...dialog.querySelectorAll('input,select,textarea')].map(el=>({el,value:el.value,checked:el.checked,option:el.tagName==='SELECT'?el.selectedOptions[0]?.textContent:null})));
@@ -14,12 +13,7 @@ export function preserveForms(draw){
   window.scrollTo({left:x,top:y,behavior:'instant'});
 }
 export function installFreshnessUI({bridge,getState,getScopes,beginLoading,notice}){
-  const formRevisions=new WeakMap(),bypass=new WeakSet();let submitting=null,ticket=0,resumePending=null;
-  const isDataDialog=d=>d?.matches('dialog.record-dialog')&&!d.id.startsWith('pin')&&d.id!=='profileDialog';
-  function opened(dialog){if(isDataDialog(dialog)&&!formRevisions.has(dialog))formRevisions.set(dialog,bridge.revision());}
-  new MutationObserver(records=>{for(const {target}of records)if(target.matches('dialog')){if(target.open)opened(target);else{formRevisions.delete(target);if(submitting===target)submitting=null;}}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
-  document.addEventListener('submit',event=>{const dialog=event.target.closest('dialog[open]');if(isDataDialog(dialog)){opened(dialog);submitting=dialog;}},true);
-  function rebase(){document.querySelectorAll('dialog[open]').forEach(d=>{if(isDataDialog(d))formRevisions.set(d,bridge.revision());});}
+  const bypass=new WeakSet();let ticket=0,resumePending=null;
   async function check(scopes,{notify=true}={}){
     if(!getState()||!navigator.onLine)return;
     const result=await bridge.ensureFresh({scopes});
@@ -63,10 +57,5 @@ export function installFreshnessUI({bridge,getState,getScopes,beginLoading,notic
     resumePending=check(getScopes()).catch(()=>{}).finally(()=>resumePending=null);
   };
   window.addEventListener('focus',resume);document.addEventListener('visibilitychange',resume);window.addEventListener('online',resume);
-  return {opened,
-    expectedRevision(){const dialog=submitting?.open?submitting:document.activeElement?.closest('dialog[open]')||[...document.querySelectorAll('dialog[open]')].filter(isDataDialog).at(-1);return dialog&&formRevisions.has(dialog)?formRevisions.get(dialog):bridge.revision();},
-    committed:rebase,
-    async conflict(){try{await bridge.ensureFresh({scopes:getScopes(),force:true});}finally{rebase();}return new Error(conflictText);},
-    clear(){ticket++;submitting=null;}
-  };
+  return {clear(){ticket++;}};
 }

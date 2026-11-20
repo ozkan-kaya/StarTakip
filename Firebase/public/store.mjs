@@ -97,42 +97,38 @@ export function createStore(api,db,domain,security=null) {
       for(const change of changes){const ref=doc(db,change.path);if(change.value===null)transaction.delete(ref);else transaction.set(ref,change.value);}
       if(changes.length)transaction.set(metaRef,{schemaVersion:9,companyVersion:view.companyVersions.at(-1).surum,revision:base.revision+1,expectedRevision:base.revision,updatedAt:serverTimestamp(),operation,pinProofs,pinLeaseId:grant?.leaseId||''});
     });
-    cached={raw,revision:base.revision+(changes.length?1:0)};
+    const committedRevision=base.revision+(changes.length?1:0);
+    cached={raw,revision:committedRevision};
+    return committedRevision;
   }
   return {
     invalidate(){cached=null;},cleanRows,
-    async execute(action,input,{expectedRevision}={}){
-      if(expectedRevision!==undefined){
-        if(!Number.isInteger(expectedRevision)||expectedRevision<0)throw revisionConflict();
-        // The form's revision remains fixed while the user is editing. Never
-        // silently rebuild and resubmit this command against a newer snapshot.
-        const current=await getDocFromServer(metaRef);
-        if(revision(current)!==expectedRevision)throw revisionConflict();
-        const base=await load();
-        if(base.revision!==expectedRevision){cached=null;return this.execute(action,input,{expectedRevision});}
-        let result;
-        try{result=domain.execute(action,input,base.raw);}catch(error){const latest=await getDocFromServer(metaRef);if(revision(latest)!==expectedRevision)throw revisionConflict();throw error;}
-        try{await commit(base,result.raw,result.view,pinGroup(action,input,base.raw));}
-        catch(error){cached=null;if(error.stale)throw revisionConflict();
-          // Firestore rules may reject a racing request before the SDK reports
-          // a transaction retry. Convert only a confirmed revision change.
-          if(['permission-denied','aborted'].includes(error.code)){const latest=await getDocFromServer(metaRef);if(revision(latest)!==expectedRevision)throw revisionConflict();}throw error;
-        }
-        return {...result,revision:cached.revision};
-      }
+    async execute(action,input){
       for(let attempt=0;attempt<4;attempt++){
-        const base=await load(attempt>0);
+        const lastSnapshot=cached;
+        const needsReload=lastSnapshot&&revision(await getDocFromServer(metaRef))!==lastSnapshot.revision;
+        const base=await load(needsReload);
         let result;
-        try{result=domain.execute(action,input,base.raw);}catch(error){
-          // An old snapshot may reject a valid sale after another device adds
-          // stock. Recheck its revision before reporting a validation failure.
-          const current=await getDocFromServer(metaRef);
-          if(revision(current)!==base.revision){cached=null;continue;}
+        try{
+          result=domain.execute(action,input,base.raw);
+        }catch(error){
+          if(revision(await getDocFromServer(metaRef))===base.revision)throw error;
+          cached=null;
+          continue;
+        }
+        try{
+          const committedRevision=await commit(base,result.raw,result.view,pinGroup(action,input,base.raw));
+          return {...result,revision:committedRevision};
+        }catch(error){
+          cached=null;
+          if(error.stale)continue;
+          // Rules can report a revision race before the SDK reports a retry.
+          if(['permission-denied','aborted'].includes(error.code)
+            &&revision(await getDocFromServer(metaRef))!==base.revision)continue;
           throw error;
         }
-        try{await commit(base,result.raw,result.view,pinGroup(action,input,base.raw));return result;}catch(error){cached=null;if(!error.stale)throw error;}
       }
-      throw new Error('Başka bir cihaz aynı anda işlem yaptı. Güncel verileri kontrol edip yeniden deneyin.');
+      throw new Error('Kayıtlar aynı anda güncelleniyor. Lütfen işlemi tekrar deneyin.');
     },
     async export(){const current=await load(true);return {format:'STAR_FIREBASE_V1',schemaVersion:9,revision:current.revision,exportedAt:new Date().toISOString(),tables:current.raw};},
     inspectImport(payload){
