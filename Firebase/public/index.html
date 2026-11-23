@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-2"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-3"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
 <style>
 :root{--ink:#173c35;--text:#243e36;--muted:#6b7c74;--paper:#f5f7f3;--line:#e2e8e1;--accent:#d4e7ad;--border-hover:#d4e7ad66;--red:#ab4e42;--shadow:0 2px 4px #173c3502,0 8px 28px #173c3504;
   /* Design tokens — stage 1: definitions only; existing rules stay unchanged. */
@@ -930,7 +930,7 @@ document.addEventListener('click',event=>{
 },true);
 </script>
 <script src="/entry-search.js?v=app-20261119-1"></script><script type="module">
-import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-2';
+import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-3';
 import {installPinUI} from '/pin-ui.mjs?v=app-20261119-1';
 import * as companyModel from '/company.mjs?v=app-20261119-1';
 window.starCompanyModel=companyModel;
@@ -942,11 +942,15 @@ const companyBackend={
   regenerate:input=>companyMutation('regenerateCompanyDocument',input)
 };
 async function companyMutation(action,input){
-  const response=await call('mutateAndRead',{action,data:input,scopes:['ledger','company']});
-  Object.assign(state,response.patch);markDataLoaded('ledger');preserveForms(render);if(activeReceiptId)renderTransactionReceiptPage();return response.result;
+  const result=await callAndRefresh(action,input,['ledger','company']);
+  preserveForms(render);return result;
 }
 installPinUI(window.starFirebase.security,{company:companyBackend,clearLoading:()=>clearForegroundLoading(),notice:message=>notice(message)});
-window.starFirebase.onPatch=patch=>{if(!state)return;for(const scope of ['products','parties','notes'])if(Object.hasOwn(patch,scope))markDataLoaded(scope);if(Object.hasOwn(patch,'transactions'))markDataLoaded('ledger');if(busy){pendingFirebasePatch=Object.assign(pendingFirebasePatch||{},patch);return;}Object.assign(state,patch);preserveForms(render);};
+window.starFirebase.onPatch=patch=>{
+  if(!state||patch.dataRevision<Math.max(state.dataRevision??0,pendingFirebasePatch?.dataRevision??0))return;
+  if(busy){pendingFirebasePatch=Object.assign(pendingFirebasePatch||{},patch);return;}
+  if(applyFirebasePatch(patch))preserveForms(render);
+};
 window.starFirebase.onError=error=>{if(/permission-denied|AUTH_/.test(error.code||error.message)){lockApp('Bu hesaba erişim izni verilmemiş.');}else notice('Veriler güncellenemedi. İnternet bağlantınızı kontrol ediniz.',true);};
 let pendingFirebasePatch=null;
 let state=
@@ -1145,11 +1149,19 @@ function moduleScopes(page,key){
   return ['ledger'];
 }
 function markDataLoaded(scope){loadedDataScopes.add(scope);if(scope==='ledger'){loadedDataScopes.add('products');loadedDataScopes.add('parties');}}
+function applyFirebasePatch(patch){
+  if(!state||patch.dataRevision<(state.dataRevision??0))return false;
+  Object.assign(state,patch);
+  for(const scope of ['products','parties','notes'])if(Object.hasOwn(patch,scope))markDataLoaded(scope);
+  if(Object.hasOwn(patch,'transactions'))markDataLoaded('ledger');
+  if(Object.hasOwn(patch,'companyVersions'))markDataLoaded('company');
+  return true;
+}
 async function ensureDataScope(scope){
   if(loadedDataScopes.has(scope))return;
   if(pendingDataScopes.has(scope))return pendingDataScopes.get(scope);
   const epoch=dataEpoch;
-  const request=call('getModuleState',{scope}).then(result=>{if(epoch!==dataEpoch||!state)return;Object.assign(state,result);markDataLoaded(scope);}).finally(()=>{if(epoch===dataEpoch)pendingDataScopes.delete(scope);});
+  const request=call('getModuleState',{scope}).then(result=>{if(epoch!==dataEpoch||!state)return;if(applyFirebasePatch(result))markDataLoaded(scope);}).finally(()=>{if(epoch===dataEpoch)pendingDataScopes.delete(scope);});
   pendingDataScopes.set(scope,request);return request;
 }
 function deferViewData(scopes,retry,{pageLoading=false}={}){
@@ -1169,14 +1181,12 @@ async function refreshLoadedData(){
   const epoch=++dataEpoch;loadedDataScopes.clear();pendingDataScopes.clear();
   await Promise.all(scopes.map(ensureDataScope));if(epoch!==dataEpoch)throw new Error('Oturum değişti.');return state;
 }
-async function callAndRefresh(action,data){
-  
-  const scopes=action==='saveNote'?['notes']:loadedDataScopes.has('ledger')?['ledger']:['products','parties'].filter(scope=>loadedDataScopes.has(scope));
+async function callAndRefresh(action,data,scopes=action==='saveNote'?['notes']:loadedDataScopes.has('ledger')?['ledger']:['products','parties'].filter(scope=>loadedDataScopes.has(scope))){
   const epoch=dataEpoch;
   const response=await call('mutateAndRead',{action,data,scopes});
   if(epoch!==dataEpoch||!state)throw new Error('Oturum değişti.');
   if(response.refreshError){dataEpoch++;pendingDataScopes.clear();scopes.forEach(scope=>loadedDataScopes.delete(scope));if(scopes.includes('ledger')){loadedDataScopes.delete('products');loadedDataScopes.delete('parties');}const error=new Error(response.refreshError);error.completed=true;throw error;}
-  dataEpoch++;pendingDataScopes.clear();Object.assign(state,response.patch);scopes.forEach(markDataLoaded);return response.result;
+  applyFirebasePatch(response.patch);return response.result;
 }
 function clearDataCache(){dataEpoch++;dataIntent++;loadedDataScopes.clear();pendingDataScopes.clear();}
 
@@ -1219,7 +1229,7 @@ function showActionError(error,completed){
 function handleOffline(){notice('Bağlantı kesildi. İnternet bağlantınızı kontrol ediniz.',true);connectionNotice=true;updateSyncStatus();}
 
 const busyControls=new Map();
-function setBusy(value){busy=value;if(!value&&pendingFirebasePatch&&state){Object.assign(state,pendingFirebasePatch);pendingFirebasePatch=null;queueMicrotask(()=>preserveForms(render));}if(value){document.querySelectorAll('button,input,select,textarea').forEach(el=>{busyControls.set(el,el.disabled);el.disabled=true;});}else{busyControls.forEach((disabled,el)=>el.disabled=disabled);busyControls.clear();renderExtraLines();}['transactionForm','partyForm','productForm','stockCountForm','noteForm'].forEach(id=>$(id).setAttribute('aria-busy',String(value)));}
+function setBusy(value){busy=value;if(!value&&pendingFirebasePatch){const patch=pendingFirebasePatch;pendingFirebasePatch=null;if(applyFirebasePatch(patch))queueMicrotask(()=>{if(state)preserveForms(render);});}if(value){document.querySelectorAll('button,input,select,textarea').forEach(el=>{busyControls.set(el,el.disabled);el.disabled=true;});}else{busyControls.forEach((disabled,el)=>el.disabled=disabled);busyControls.clear();renderExtraLines();}['transactionForm','partyForm','productForm','stockCountForm','noteForm'].forEach(id=>$(id).setAttribute('aria-busy',String(value)));}
 // ── Routes and page navigation ──
 const pageRoutes={home:'',notes:'/notlar',transactions:'/islemler',parties:'/cari',products:'/stok',history:'/hareketler'};
 const pageTitles={home:'Hızlı erişim',notes:'Notlar',transactions:'İşlemler',parties:'Cari',products:'Stok',history:'Hareketler',reports:'Raporlar'};
