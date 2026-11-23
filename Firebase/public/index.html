@@ -1505,8 +1505,14 @@ function pagedTable(key,headers,rows){
   const first=(page-1)*TABLE_PAGE_SIZE;
   const button=(n,label,disabled=false)=>'<button type="button" data-table-page="'+n+'" data-table-key="'+key+'" aria-label="'+(label==='‹'?'Önceki sayfa':label==='›'?'Sonraki sayfa':n+'. sayfa')+'"'+(disabled?' disabled':'')+(n===page&&label!=='‹'&&label!=='›'?' class="active" aria-current="page"':'')+'>'+label+'</button>';
   let numbers='';for(let n=1;n<=count;n++){if(n===1||n===count||Math.abs(n-page)<=1)numbers+=button(n,String(n));else if(n===page-2||n===page+2)numbers+='<span aria-hidden="true">…</span>';}
-  return '<div class="table-page">'+table(headers,rows.slice(first,first+TABLE_PAGE_SIZE))+'</div><div class="table-print">'+table(headers,rows)+'</div><div class="pagination"><span class="page-count">'+(first+1)+'–'+Math.min(first+TABLE_PAGE_SIZE,rows.length)+' / '+rows.length+'</span><nav aria-label="Tablo sayfaları">'+button(page-1,'‹',page===1)+numbers+button(page+1,'›',page===count)+'</nav></div>';
+  return '<div class="table-page">'+table(headers,rows.slice(first,first+TABLE_PAGE_SIZE))+'</div><div class="table-print"></div><div class="pagination"><span class="page-count">'+(first+1)+'–'+Math.min(first+TABLE_PAGE_SIZE,rows.length)+' / '+rows.length+'</span><nav aria-label="Tablo sayfaları">'+button(page-1,'‹',page===1)+numbers+button(page+1,'›',page===count)+'</nav></div>';
 }
+window.addEventListener('beforeprint',()=>{
+  for(const [key,{headers,rows}] of tablePages){
+    const print=$(key)?.querySelector(':scope > .table-print');
+    if(print&&!print.closest('[hidden],dialog:not([open])'))print.innerHTML=table(headers,rows);
+  }
+});
 document.addEventListener('click',event=>{
   const button=event.target.closest('[data-table-page]');if(!button||busy||button.disabled)return;
   const key=button.dataset.tableKey,entry=tablePages.get(key),host=$(key);if(!entry||!host)return;
