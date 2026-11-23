@@ -1855,7 +1855,11 @@ function renderRecordDetail(){
 
       const recent=state.transactions.filter(t=>transactionItems(t).some(line=>line.urunId===id)).slice().sort((a,b)=>b.tarih.localeCompare(a.tarih)||b.olusturmaZamani.localeCompare(a.olusturmaZamani)||(b._row||0)-(a._row||0)).slice(0,5);
       body+='<section class="detail-section"><h3>Son ürün hareketleri</h3>'+(recent.length?'<div class="detail-movements">'+recent.map(t=>'<div><div>'+recordLink('transaction',t.id,state.rules[t.tur].label)+'<span class="muted">'+escapeHtml(displayDate(t.tarih))+(t.cariId?' · '+recordLink('party',t.cariId,lookup(state.parties,t.cariId)):'')+'</span></div><div class="detail-movement-value">'+escapeHtml(qty(transactionItems(t).filter(line=>line.urunId===id).reduce((sum,line)=>sum+line.adet,0))+' '+p.birim)+(t.durum==='AKTIF'?'':'<br>'+statusTag(t))+'</div></div>').join('')+'</div>':'<p class="muted">Bu ürüne ait hareket yok.</p>')+'</section>';
-      body+=detailActionSection('<button type="button" class="primary" data-product-tool="movements" data-product-id="'+escapeHtml(id)+'">Hareketler</button><button type="button" class="primary" data-product-tool="prices" data-product-id="'+escapeHtml(id)+'">Fiyat geçmişi</button><button type="button" data-product-tool="count" data-product-id="'+escapeHtml(id)+'">Sayım</button>');
+      const actions=[['prices','Fiyat geçmişi'],['count','Sayım'],['STOK_GIRIS','Stok girişi'],['STOK_CIKIS','Stok çıkışı'],['movements','Hareketler']];
+      body+=detailActionSection(actions.map(([key,label])=>{
+        const disabled=p.arsivlendiMi&&(key==='count'||entryGroups.stock.includes(key));
+        return '<button type="button"'+(key==='movements'?' class="primary"':'')+' data-product-tool="'+key+'" data-product-id="'+escapeHtml(id)+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
+      }).join(''));
     }
   }else if(type==='party'){
     const p=state.parties.find(x=>x.id===id);
@@ -1897,10 +1901,10 @@ function renderRecordDetail(){
         body+=detailSection(name+' bilgileri',docFields);
       }
       if(t.aciklama)body+='<section class="detail-section"><h3>Açıklama</h3><p class="detail-note">'+escapeHtml(t.aciklama)+'</p></section>';
-      body+=detailSection('Kayıt bilgileri',[['Oluşturan',t.olusturan],['Kayıt zamanı',detailTime(t.olusturmaZamani)],['Firma sürümü','v'+(t.firmaSurumu||1)]]);
+      body+=detailSection('Kayıt bilgileri',[['Oluşturan',t.olusturan],['Kayıt zamanı',detailTime(t.olusturmaZamani)]]);
       if(t.durum==='IPTAL')body+='<div class="hint error">İptal edildi; toplamlara dahil değil.</div>'+detailSection('İptal bilgileri',[['İptal nedeni',t.iptalNedeni],['İptal eden',t.iptalEden],['İptal zamanı',detailTime(t.iptalZamani)]]);
       if(['STOK_GIRIS','STOK_CIKIS'].includes(t.tur))body+=detailActionSection('<button type="button" class="primary" data-print-transaction="'+escapeHtml(t.id)+'">Döküm</button>');
-      else if(['SATIS','ALIS','SATIS_IADE','ALIS_IADE','CARI_DEVIR','TAHSILAT','ODEME'].includes(t.tur))body+=detailActionSection('<button type="button" class="primary" data-print-transaction="'+escapeHtml(t.id)+'">Döküm</button><button type="button" data-regenerate-company="'+escapeHtml(t.id)+'">Güncel firma bilgileriyle yeniden oluştur</button>');
+      else if(['SATIS','ALIS','SATIS_IADE','ALIS_IADE','CARI_DEVIR','TAHSILAT','ODEME'].includes(t.tur))body+=detailActionSection('<button type="button" class="primary" data-print-transaction="'+escapeHtml(t.id)+'">Döküm</button>');
     }
   }
   $('detailEyebrow').textContent=({product:'Ürün detayı',party:'Cari detayı',method:'Ödeme yöntemi detayı',transaction:'İşlem detayı'}[type]||'Kayıt detayı');
@@ -2286,8 +2290,20 @@ function openPartyPayment(id,kind){
   detailSkipFocus=true;$('recordDialog').close();show('transactions');openUnifiedEntry(kind);$('txParty').value=id;lastUsedChoices.party=id;pendingTx=null;updateBalanceSuggestion();focusField(state.rules[kind].item?'txProduct':'txAmount');
 }
 function openProductTool(id,key){
-  if(!state?.products.some(p=>p.id===id)||key==='count'&&state.products.find(p=>p.id===id)?.arsivlendiMi)return;
-  if(key==='count'){detailSkipFocus=true;$('recordDialog').close();show('transactions');openUnifiedEntry('count');$('txProduct').value=id;lastUsedChoices.product=id;productChanged();focusField('txQty');return;}
+  const product=state?.products.find(p=>p.id===id);
+  const stockAction=key==='count'||entryGroups.stock.includes(key);
+  if(!product||stockAction&&product.arsivlendiMi)return;
+  if(stockAction){
+    detailSkipFocus=true;
+    $('recordDialog').close();
+    show('transactions');
+    openUnifiedEntry(key);
+    $('txProduct').value=id;
+    lastUsedChoices.product=id;
+    productChanged();
+    focusField('txQty');
+    return;
+  }
   if(key==='movements'){detailSkipFocus=true;$('recordDialog').close();show('transactions',{sub:'list',movementScope:'stock',movementProduct:id});return;}
   detailSkipFocus=true;$('recordDialog').close();navigateToModule('products',key);
   const selector={movements:'stockHistoryProduct',prices:'priceHistoryProduct',count:'countProduct'}[key];
@@ -2639,7 +2655,7 @@ function receiptMarkup(input,data,company=window.starCompanyModel.companyForDocu
       '><span class="receipt-total-amounts">'+amounts+'</span></td>':'';
     return '<tr'+(grand?' class="receipt-grand-row"':'')+'><th scope="row">'+label+'</th>'+cell+'</tr>';
   };
-  const totalRows=totalRow(paymentReceipt?(t.tur==='TAHSILAT'?'Tahsil edilen':'Ödenen'):openingReceipt?'Açılış bakiyesi':'Ara toplam','subtotal')+
+  const totalRows=totalRow(paymentReceipt?(t.tur==='TAHSILAT'?'Tahsil edilen':'Ödenen'):openingReceipt?'Açılış bakiyesi':'Net toplam','subtotal')+
     (paired?totalRow('Ödeme','payment'):'')+totalRow('Eski bakiye','before',true)+
     totalRow(paymentReceipt?'İşlem sonrası bakiye':'Güncel bakiye','general',true,true);
   const totalCols='<col class="receipt-totals-label">'+
