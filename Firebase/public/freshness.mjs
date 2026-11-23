@@ -2,11 +2,18 @@
 export function createFreshness({readMeta,readScopes,loadedScopes,publish,invalidate,now=Date.now,ttl=5000}){
   let revision=null,meta=null,checkedAt=-Infinity,readPending=null,syncPending=null,epoch=0;
   const hydrated=new Set();
+  function boundedRead(read){
+    let timer;
+    const timeout=new Promise((_,reject)=>{
+      timer=setTimeout(()=>reject(new Error('Veriler alınamadı. İnternet bağlantınızı kontrol ediniz.')),12000);
+    });
+    return Promise.race([Promise.resolve().then(read),timeout]).finally(()=>clearTimeout(timer));
+  }
   async function latest(force=false){
     if(!force&&meta&&now()-checkedAt<ttl)return meta;
     if(readPending)return readPending;
     const generation=epoch;
-    readPending=readMeta().then(value=>{if(generation!==epoch)throw Error('CANCELLED: Oturum değişti.');meta=value;checkedAt=now();return value;}).finally(()=>{if(generation===epoch)readPending=null;});
+    readPending=boundedRead(readMeta).then(value=>{if(generation!==epoch)throw Error('CANCELLED: Oturum değişti.');meta=value;checkedAt=now();return value;}).finally(()=>{if(generation===epoch)readPending=null;});
     return readPending;
   }
   async function ensure({scopes=[],force=false}={}){
@@ -21,7 +28,7 @@ export function createFreshness({readMeta,readScopes,loadedScopes,publish,invali
       if(names.length){
         let stable=false;
         for(let attempt=0;attempt<3;attempt++){
-          data=await readScopes(names);const after=await latest(true);
+          data=await boundedRead(()=>readScopes(names));const after=await latest(true);
           if(after.revision===server.revision){server=after;stable=true;break;}
           server=after;names=allNames;
         }

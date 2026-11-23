@@ -46,8 +46,10 @@ export function installFreshnessUI({bridge,getState,getScopes,beginLoading,notic
     if(!button||button.disabled||bypass.has(button)||!getState()||button.closest('.pin-dialog,#profileDialog')||!needsCheck(button))return;
     event.preventDefault();event.stopImmediatePropagation();const intent=++ticket;let finish=()=>{};
     const timer=setTimeout(()=>{if(intent===ticket)finish=beginLoading();},120);
-    check(scopesFor(button)).catch(()=>{}).finally(()=>{
-      clearTimeout(timer);finish();if(intent!==ticket)return;
+    let waitTimer;
+    const timeout=new Promise(resolve=>{waitTimer=setTimeout(resolve,5000);});
+    Promise.race([check(scopesFor(button)),timeout]).catch(()=>{}).finally(()=>{
+      clearTimeout(timer);clearTimeout(waitTimer);finish();if(intent!==ticket)return;
       const target=replacement(button);if(!target||target.disabled)return;
       bypass.add(target);try{target.click();}finally{bypass.delete(target);}
     });

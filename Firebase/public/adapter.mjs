@@ -4,7 +4,7 @@ import * as firestore from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-f
 import {createDomain} from './domain.mjs?v=app-20261119-1';
 import {createStore} from './store.mjs?v=app-20261120-1';
 import {createPinSecurity} from './pin-security.mjs?v=app-20261119-1';
-import {createFreshness} from './freshness.mjs?v=app-20261123-1';
+import {createFreshness} from './freshness.mjs?v=app-20261123-2';
 const ALLOWED_EMAILS=new Set(['company@example.invalid','authorized-user@example.invalid']);
 export async function createFirebaseBridge(){
   const controller=new AbortController(),configTimer=setTimeout(()=>controller.abort(),12000);
