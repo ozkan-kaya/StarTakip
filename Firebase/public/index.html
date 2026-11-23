@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-4"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-5"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
 <style>
 :root{--ink:#173c35;--text:#243e36;--muted:#6b7c74;--paper:#f5f7f3;--line:#e2e8e1;--accent:#d4e7ad;--border-hover:#d4e7ad66;--red:#ab4e42;--shadow:0 2px 4px #173c3502,0 8px 28px #173c3504;
   /* Design tokens — stage 1: definitions only; existing rules stay unchanged. */
@@ -930,7 +930,7 @@ document.addEventListener('click',event=>{
 },true);
 </script>
 <script src="/entry-search.js?v=app-20261119-1"></script><script type="module">
-import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-4';
+import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-5';
 import {installPinUI} from '/pin-ui.mjs?v=app-20261119-1';
 import * as companyModel from '/company.mjs?v=app-20261119-1';
 window.starCompanyModel=companyModel;
@@ -948,6 +948,12 @@ async function companyMutation(action,input){
 installPinUI(window.starFirebase.security,{company:companyBackend,clearLoading:()=>clearForegroundLoading(),notice:message=>notice(message)});
 window.starFirebase.onPatch=patch=>{
   if(!state||patch.dataRevision<Math.max(state.dataRevision??0,pendingFirebasePatch?.dataRevision??0))return;
+  if(!Object.hasOwn(patch,'dataRevision')&&Object.hasOwn(patch,'lastOperationAt')){
+    state.lastOperationAt=patch.lastOperationAt;
+    if(pendingFirebasePatch)pendingFirebasePatch.lastOperationAt=patch.lastOperationAt;
+    updateSyncStatus();
+    return;
+  }
   if(busy){pendingFirebasePatch=Object.assign(pendingFirebasePatch||{},patch);return;}
   if(applyFirebasePatch(patch))preserveForms(render);
 };

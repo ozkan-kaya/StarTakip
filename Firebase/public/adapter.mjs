@@ -66,11 +66,11 @@ export async function createFirebaseBridge(){
       if(epoch!==generation||snapshot.metadata.hasPendingWrites||snapshot.metadata.fromCache)return;
       const data=snapshot.exists()?snapshot.data():{};
       const revision=data.revision||0;
+      if(revision<(freshness.revision??0))return;
       freshness.observe({revision});
+      bridge.onPatch?.({lastOperationAt:stamp(data.updatedAt)});
       if(loadedViews.size&&revision>freshness.revision){
         void freshness.ensure().catch(error=>{if(epoch===generation)bridge.onError?.(error);});
-      }else{
-        bridge.onPatch?.({lastOperationAt:stamp(data.updatedAt)});
       }
     },error=>{if(epoch!==generation)return;stopLastOperation=null;bridge.onError?.(error);});
   }
