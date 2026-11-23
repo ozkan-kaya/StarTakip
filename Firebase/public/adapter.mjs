@@ -74,7 +74,7 @@ export async function createFirebaseBridge(){
       }
     },error=>{if(epoch!==generation)return;stopLastOperation=null;bridge.onError?.(error);});
   }
-  bridge.prefetch=async()=>{user();watchLastOperation();return bridge.ensureFresh({scopes:['products','parties']});};
+  bridge.prefetch=async()=>{user();watchLastOperation();return bridge.ensureFresh({scopes:['products','parties','company']});};
   async function execute(action,data,scopes=[]){
     if(!navigator.onLine)throw new Error('İnternet bağlantınızı kontrol ediniz.');
     const epoch=generation;
@@ -91,7 +91,12 @@ export async function createFirebaseBridge(){
     return {result:result.result,patch:viewPatch()};
   }
   bridge.call=async(name,arg)=>{
-    if(name==='beginSession'){user();await security.dailyUnlock();try{await bridge.ensureFresh({scopes:['company']});}catch(error){if(/AUTH_/.test(error.message))throw error;}return {token:auth.currentUser.uid,profile:profile(),appState:{...domain.bootstrap(),companyVersions:loadedViews.get('companyVersions')||[],dataRevision:freshness.revision}};}
+    if(name==='beginSession'){
+      user();
+      await security.dailyUnlock();
+      const current=user();
+      return {token:current.uid,profile:profile(),appState:{...domain.bootstrap(),companyVersions:loadedViews.get('companyVersions')||[],dataRevision:freshness.revision}};
+    }
     if(name==='endSession'){clear();await signOut(auth);return true;}
     user();
     if(name==='getProfile')return profile();

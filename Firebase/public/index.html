@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-3"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-4"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2">
 <style>
 :root{--ink:#173c35;--text:#243e36;--muted:#6b7c74;--paper:#f5f7f3;--line:#e2e8e1;--accent:#d4e7ad;--border-hover:#d4e7ad66;--red:#ab4e42;--shadow:0 2px 4px #173c3502,0 8px 28px #173c3504;
   /* Design tokens — stage 1: definitions only; existing rules stay unchanged. */
@@ -930,7 +930,7 @@ document.addEventListener('click',event=>{
 },true);
 </script>
 <script src="/entry-search.js?v=app-20261119-1"></script><script type="module">
-import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-3';
+import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-4';
 import {installPinUI} from '/pin-ui.mjs?v=app-20261119-1';
 import * as companyModel from '/company.mjs?v=app-20261119-1';
 window.starCompanyModel=companyModel;
@@ -1552,7 +1552,14 @@ function lockApp(message='',{redirect=true}={}){window.starFreshnessUI?.clear();
   tablePages.clear();stockCountExpected=null;pendingCountId=null;document.querySelectorAll('#metrics,#recent,#partyList,#productList,#historyList,#paymentList,#documentList,#reportMetrics,#reportProducts,#reportMethods,#reportParties,#stockHistoryList,#priceHistoryList,#priceHistorySummary,#tradeList,#partyMovementList,#generalList,#noteList').forEach(el=>el.replaceChildren());
 }
 function unlockApp(){document.querySelector('main').hidden=false;document.querySelector('header nav').hidden=false;document.querySelector('.header-account').hidden=false;$('authScreen').hidden=true;}
-async function firebaseSignIn(){try{await window.starFirebase.login();await signIn();}catch(error){lockApp(String(error.message||error));}}
+async function firebaseSignIn(){
+  if(busy||$('signInButton').disabled)return;
+  setAuthLoading(true);
+  $('authMessage').textContent='';
+  try{await window.starFirebase.login();await signIn();}
+  catch(error){lockApp(String(error.message||error));}
+  finally{setAuthLoading(false);}
+}
 async function signIn(){
   if(busy)return;setAuthLoading(true);$('signInButton').disabled=true;$('authMessage').textContent='';
   
