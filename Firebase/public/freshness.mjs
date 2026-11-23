@@ -14,22 +14,23 @@ export function createFreshness({readMeta,readScopes,loadedScopes,publish,invali
     const generation=epoch;
     syncPending=(async()=>{
       let server=await latest(force);
-      const previous=revision,names=[...new Set([...loadedScopes(),...scopes])];
-      const changed=previous!==null&&server.revision!==previous;
-      if(previous===server.revision&&names.every(name=>hydrated.has(name)))return {changed:false,revision,meta};
+      const previous=revision,allNames=[...new Set([...loadedScopes(),...scopes])];
+      let names=previous===server.revision?allNames.filter(name=>!hydrated.has(name)):allNames;
+      if(previous===server.revision&&!names.length)return {changed:false,revision,meta};
       let data={};
       if(names.length){
         let stable=false;
         for(let attempt=0;attempt<3;attempt++){
           data=await readScopes(names);const after=await latest(true);
-          if(after.revision===server.revision){server=after;stable=true;break;}server=after;
+          if(after.revision===server.revision){server=after;stable=true;break;}
+          server=after;names=allNames;
         }
         if(!stable)throw Error('Veriler güncelleniyor. Lütfen yeniden deneyin.');
       }
       if(generation!==epoch)throw Error('CANCELLED: Oturum değişti.');
       revision=server.revision;names.forEach(name=>hydrated.add(name));invalidate();
       publish({...data,dataRevision:revision,lastOperationAt:server.updatedAt,updatedAt:new Date(now()).toISOString()},names);
-      return {changed,revision,meta:server};
+      return {changed:previous!==null&&server.revision!==previous,revision,meta:server};
     })();
     try{return await syncPending;}finally{if(generation===epoch)syncPending=null;}
   }
