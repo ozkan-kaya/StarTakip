@@ -899,6 +899,10 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 <dialog id="quickMasterDialog" class="record-dialog" aria-labelledby="quickMasterTitle"><div class="detail-header"><div><div class="eyebrow">Hızlı ekle</div><h2 id="quickMasterTitle"></h2></div><button id="quickMasterClose" type="button" class="detail-close" aria-label="Hızlı eklemeyi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="quickMasterError" class="hint error" role="alert" hidden></div><div id="quickMasterHost"></div></div></dialog>
 <div id="loadingScreen" class="loading-screen" popover="manual" hidden role="status" aria-live="polite" aria-atomic="true"><div class="loading-content"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-message">Yükleniyor…</p></div></div>
 <script>
+if(new URLSearchParams(location.search).get('perf')==='1'){
+  window.starPerf=(label,start=performance.now())=>()=>console.info('[Star Takip süre]',label,Math.round(performance.now()-start)+' ms');
+  window.starFinishStartup=window.starPerf('Açılış',0);
+}
 window.starStartupFailed=message=>{
   const el=document.getElementById('bootLoading');if(!el||el.hidden)return;
   clearTimeout(window.starBootTimer);
@@ -1183,7 +1187,8 @@ function loadingFailure(error){try{clearForegroundLoading();}catch{}console.warn
 function call(name,arg){
   let finish=()=>{};
   try{finish=beginForegroundLoading(name,arg);}catch(error){loadingFailure(error);}
-  return callRequest(name,arg).finally(()=>{try{finish();}catch(error){loadingFailure(error);}});
+  const measure=['beginSession','getModuleState','mutateAndRead'].includes(name)?window.starPerf?.(name):null;
+  return callRequest(name,arg).finally(()=>{measure?.();try{finish();}catch(error){loadingFailure(error);}});
 }
 function callRequest(name,arg){
   return new Promise((resolve,reject)=>{
@@ -1542,7 +1547,10 @@ async function signIn(){
   if(busy)return;setAuthLoading(true);$('signInButton').disabled=true;$('authMessage').textContent='';
   
   try{const restoreExistingNavigation=navigationReady,fromLogin=getPathContext().path==='/login';const session=await call('beginSession');sessionToken=session.token;currentProfile=session.profile;clearDataCache();state=session.appState||await call('getAppState');unlockApp();const requestedPage=window.starPendingPage;if(fromLogin&&!requestedPage)writePageUrl('home','replace');render();void window.starFirebase.prefetch().catch(()=>{});if(fromLogin||restoreExistingNavigation){window.starPendingPage=null;show(requestedPage||(fromLogin?'home':activePage),{urlMode:'replace'});}try{sessionStorage.removeItem('starSignedOut');}catch{}notice('');}
-  catch(error){lockApp(String(error.message||error));}finally{$('signInButton').disabled=false;setAuthLoading(false);}
+  catch(error){lockApp(String(error.message||error));}finally{
+    $('signInButton').disabled=false;setAuthLoading(false);
+    window.starFinishStartup?.();window.starFinishStartup=null;
+  }
 }
 async function signOut(){
   if(busy)return;setBusy(true);
@@ -3021,6 +3029,7 @@ function openModule(page,key,{urlMode='push',movementScope='',movementProduct=''
   }
   if(key==='new'){if(page==='parties')openPartyModal();else if(page==='notes')openNoteModal();else openProductModal();return;}
   if(deferViewData(moduleScopes(page,key),()=>openModule(page,key,{urlMode,movementScope,movementProduct,movementParty,movementMethod}),{pageLoading:true}))return;
+  const measureRender=window.starPerf?.('Menü çizimi '+page+'/'+key);
   if(view.key&&view.key!==key)resetPageFilters(page);view.key=key;
   view.menu.hidden=true;view.content.hidden=false;view.trail.hidden=false;if(view.actions)view.actions.hidden=false;
   const item=view.items.find(item=>item[0]===key);
@@ -3048,6 +3057,7 @@ function openModule(page,key,{urlMode='push',movementScope='',movementProduct=''
   }
   window.scrollTo({top:0,left:0,behavior:'instant'});
   view.trail.querySelector('button').focus({preventScroll:true});
+  measureRender?.();
 }
 document.addEventListener('click',event=>{
   const home=event.target.closest('[data-page-target]');if(home){if(!home.disabled)show(home.dataset.pageTarget);return;}
