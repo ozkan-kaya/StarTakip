@@ -1,6 +1,6 @@
 # StarTakip
 
-Cari, stok ve işlem takip uygulaması — **v1.3.19**.
+Cari, stok ve işlem takip uygulaması — **v1.3.20**.
 Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 
 ## Dosyalar
@@ -28,6 +28,8 @@ Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 - `.env` kullanmak tarayıcıya gönderilen ayarları gizlemez; veri erişimini Authentication ve sunucu kuralları korur.
 
 ## Sürüm kontrolü
+
+`v1.3.20` iPhone ve iPad PWA’da fiş PDF’ini uygulama içinde hazırlayıp paylaşma veya önizleme seçeneklerini sunar.
 
 `v1.3.19` mobilde tablo yatay kaydırılırken kayıt sayısını ve sayfa düğmelerini sabit tutar.
 
