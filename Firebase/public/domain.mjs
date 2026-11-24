@@ -1,4 +1,5 @@
 import partyLocations from './locations.mjs';
+import {validateTransactionTime,operationOrder} from './transaction-time.mjs?v=app-20261124-1';
 import {companyVersions,currentCompany,appendCompanyVersion,regenerateCompany} from './company.mjs?v=app-20261119-1';
 // Generated from AileTakip/Code.gs. Edit the original business rules, then rebuild.
 export function createDomain(email) {
@@ -12,7 +13,7 @@ const HEADERS = {
   Urunler: ['id','kod','ad','birimId','satisFiyati','kritikStok','paraBirimi','arsivlendiMi','arsivlenmeZamani','arsivleyenId'],
   Cariler: ['id','ad','kisiAdi','telefon','not','adres','eposta','il','ilce','arsivlendiMi','arsivlenmeZamani','arsivleyenId'],
   Kullanicilar: ['id','eposta'],
-  Islemler: ['id','tarih','tur','cariId','aciklama','olusturanId','olusturmaZamani','paraBirimi','islemNo','fisGrupId','firmaSurumu','firmaGecmisi'],
+  Islemler: ['id','tarih','tur','cariId','aciklama','olusturanId','olusturmaZamani','paraBirimi','islemNo','fisGrupId','firmaSurumu','firmaGecmisi','islemSaati'],
   UrunHareketleri: ['id','islemId','sira','urunId','adet','birimFiyat','sayimOncekiMiktar','sayilanMiktar'],
   CariAcilislari: ['islemId','tutar'],
   Odemeler: ['islemId','yontem','tutar','urunIslemId'],
@@ -255,7 +256,7 @@ function totals_(s) {
 }
 function checkStock_(transactions,products) {
   const stock={},names={};(products||[]).forEach(p=>names[p.id]=p.ad);
-  transactions.filter(t=>t.durum==='AKTIF'&&t.items.length).slice().sort((a,b)=>String(a.tarih).localeCompare(String(b.tarih))||String(a.olusturmaZamani).localeCompare(String(b.olusturmaZamani))||(a._row||Number.MAX_SAFE_INTEGER)-(b._row||Number.MAX_SAFE_INTEGER)||String(a.id).localeCompare(String(b.id))).forEach(t=>{
+  transactions.filter(t=>t.durum==='AKTIF'&&t.items.length).slice().sort((a,b)=>operationOrder(a,b,Number.MAX_SAFE_INTEGER)).forEach(t=>{
     t.items.forEach(line=>{stock[line.urunId]=round_((stock[line.urunId]||0)+line.stokEtki,3);if(stock[line.urunId]<0)throw new Error('Yetersiz stok: '+(names[line.urunId]||'ürün')+' için '+t.tarih+' tarihinde eksi stok oluşuyor. Önce alış veya açılış stoku girin.');});
   });
 }
@@ -405,6 +406,7 @@ function postStockCount(input,token){
     const db=model_(),s=projectModel_(db),changes=[],results=[];
     const reason=text_(input.neden,500);if(!reason)throw new Error('Sayım düzeltmesinin nedenini yazın.');
     const date=date_(input.tarih||Utilities.formatDate(new Date(),'Europe/Istanbul','yyyy-MM-dd'));
+    const islemSaati=validateTransactionTime(date,input.islemSaati);
     const stocks=totals_(s).stock;
     for(const row of rows){
       const id=id_(row.id),existing=s.transactions.find(t=>t.id===id);
@@ -413,7 +415,7 @@ function postStockCount(input,token){
       const expected=quantity_(row.beklenenMiktar,'Sistemdeki miktar',product),counted=quantity_(row.sayilanMiktar,'Sayılan miktar',product),current=stocks[product.id]||0;
       if(current!==expected)throw new Error('STOCK_CHANGED: Stok siz sayımı açtıktan sonra değişti. Stoku güncelleyip sayımı kontrol edin.');
       const difference=round_(counted-current,3);if(!difference){results.push({unchanged:true,stock:current});continue;}
-      appendTransaction_(db,changes,{id,tarih:date,paraBirimi:'TRY',tur:difference>0?'STOK_GIRIS':'STOK_CIKIS',cariId:'',aciklama:reason,...creationMetadata_(db,changes,email)});
+      appendTransaction_(db,changes,{id,tarih:date,...(islemSaati?{islemSaati}:{}),paraBirimi:'TRY',tur:difference>0?'STOK_GIRIS':'STOK_CIKIS',cariId:'',aciklama:reason,...creationMetadata_(db,changes,email)});
       stageInsert_(db,changes,'UrunHareketleri',{id:Utilities.getUuid(),islemId:id,sira:1,urunId:product.id,adet:Math.abs(difference),birimFiyat:'',sayimOncekiMiktar:current,sayilanMiktar:counted});
       results.push({id,stock:counted});
     }
@@ -428,6 +430,8 @@ function postTransaction(input,token) {
     if (s.transactions.some(t=>t.id===id)) return {id:id,duplicate:true};
     if (!rule) throw new Error('İşlem türü geçersiz.');
     const o={id:id,tarih:date_(input.tarih),paraBirimi:currency_(input.paraBirimi),tur:input.tur,cariId:'',aciklama:text_(input.aciklama,500),...creationMetadata_(db,changes,email)};
+    const islemSaati=validateTransactionTime(o.tarih,input.islemSaati);
+    if(islemSaati)o.islemSaati=islemSaati;
     if(input.indirimDegeri||input.indirimTutari)throw new Error('İndirim kullanılmıyor.');
     o.fisGrupId=input.fisGrupId?id_(input.fisGrupId):'';
     if(o.fisGrupId&&!(rule.item&&rule.balance))throw new Error('Fiş grubu yalnız alış, satış ve iadelerde kullanılabilir.');
@@ -450,7 +454,7 @@ function postTransaction(input,token) {
     if(input.odemeYapildi){
       if(!['SATIS','ALIS'].includes(o.tur))throw new Error('Birlikte ödeme yalnızca satış veya alışta kullanılabilir.');
       const total=projectModel_(db).transactions.find(t=>t.id===id).tutar;
-      const payment={id:Utilities.getUuid(),islemNo:o.islemNo,tarih:o.tarih,paraBirimi:o.paraBirimi,tur:o.tur==='SATIS'?'TAHSILAT':'ODEME',cariId:o.cariId,aciklama:'',olusturanId:o.olusturanId,olusturmaZamani:o.olusturmaZamani,_row:o._row+1};
+      const payment={id:Utilities.getUuid(),islemNo:o.islemNo,tarih:o.tarih,...(islemSaati?{islemSaati}:{}),paraBirimi:o.paraBirimi,tur:o.tur==='SATIS'?'TAHSILAT':'ODEME',cariId:o.cariId,aciklama:'',olusturanId:o.olusturanId,olusturmaZamani:o.olusturmaZamani,_row:o._row+1};
       if(total<=0)throw new Error('Net tutarı sıfır olan işlemle birlikte ödeme kaydedilemez.');
       appendPayment_(db,changes,payment,Object.assign({},input,{tutar:total}),id,s.transactions);
       appendTransaction_(db,changes,payment);

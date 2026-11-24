@@ -1,7 +1,7 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import {initializeAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,browserLocalPersistence,browserPopupRedirectResolver,connectAuthEmulator,onAuthStateChanged,reauthenticateWithPopup,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import * as firestore from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
-import {createDomain} from './domain.mjs?v=app-20261119-1';
+import {createDomain} from './domain.mjs?v=app-20261124-1';
 import {createStore} from './store.mjs?v=app-20261120-1';
 import {createPinSecurity} from './pin-security.mjs?v=app-20261119-1';
 import {createFreshness} from './freshness.mjs?v=app-20261123-3';
