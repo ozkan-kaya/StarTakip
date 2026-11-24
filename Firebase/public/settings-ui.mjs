@@ -29,14 +29,29 @@ export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   province.addEventListener('change',()=>{districts();dirty();});district.addEventListener('change',dirty);
   const values=()=>Object.fromEntries(companyFields.map(key=>[key,form.elements.namedItem(key).value]));
   function dirty(){try{save.disabled=saving||!baseline||sameCompany(normalizeCompany(values()),baseline);}catch{save.disabled=true;}}
-  function showMenu(){if(!menu.open)menu.showModal();}
+  let menuGeneration=0;
+  function showMenu(){
+    if(!menu.open){menu.showModal();menuGeneration++;}
+  }
   function back(){if(saving)return;formDialog.close();showMenu();}
   menu.querySelector('[data-back]').onclick=()=>{menu.close();document.querySelector('#profileDialog').showModal();};
-  menu.querySelector('[data-security]').onclick=()=>{menu.close();void openSecurity();};
+  const securityButton=menu.querySelector('[data-security]');
+  securityButton.onclick=async()=>{
+    if(loading||securityButton.disabled||!menu.open)return;
+    const generation=menuGeneration;
+    securityButton.disabled=true;
+    try{
+      await openSecurity(()=>{
+        if(!menu.open||generation!==menuGeneration)return false;
+        menu.close();
+        return true;
+      });
+    }finally{securityButton.disabled=false;}
+  };
   formDialog.querySelector('[data-back]').onclick=back;form.querySelector('[data-cancel]').onclick=back;
   form.addEventListener('input',dirty);
   menu.querySelector('[data-company]').onclick=async()=>{
-    if(loading)return;loading=true;const ticket=++loadTicket,button=menu.querySelector('[data-company]');button.disabled=true;
+    if(loading||securityButton.disabled)return;loading=true;const ticket=++loadTicket,button=menu.querySelector('[data-company]');button.disabled=true;
     try{
       const result=await company.read();if(ticket!==loadTicket||!menu.open)return;
       const current=currentCompany(result.companyVersions);baseline={...current,...normalizeCompany(current)};revision=result.dataRevision;

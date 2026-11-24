@@ -1,4 +1,4 @@
-import {installSettingsUI} from './settings-ui.mjs?v=app-20261124-3';
+import {installSettingsUI} from './settings-ui.mjs?v=app-20261124-4';
 export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=>{},company}={}){
   const make=(id,title,body)=>{
     const d=document.createElement('dialog');d.id=id;d.className='record-dialog compact-dialog pin-dialog'+(id==='pinRemoveDialog'?' dialog-compact':'');
@@ -28,7 +28,15 @@ export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=
     };
     screen.querySelector('.detail-close').onclick=()=>screen.close();securityScreens.push(screen);securityDialog.append(screen);return screen;
   }
-  securityDialog.addEventListener('close',()=>{activeSecurityScreen=null;for(const screen of securityScreens){screen.hidden=true;screen.removeAttribute('open');screen.dispatchEvent(new Event('close'));}});
+  securityDialog.addEventListener('close',()=>{
+    if(securityDialog.open)return;
+    activeSecurityScreen=null;
+    for(const screen of securityScreens){
+      screen.hidden=true;
+      screen.removeAttribute('open');
+      screen.dispatchEvent(new Event('close'));
+    }
+  });
   securityDialog.addEventListener('cancel',event=>{if(activeSecurityScreen!==securityScreens[0]){event.preventDefault();activeSecurityScreen?.close();}});
   let securityOutsideStart=false;
   const outsideSecurity=event=>{const r=securityDialog.getBoundingClientRect();return event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom;};
@@ -295,7 +303,8 @@ dialog.record-dialog.pin-dialog {
     syncDots(d);if(button&&(length||d===removal))button.disabled=!valid;return valid;
   }
   function show(d){
-    clearLoading();for(const el of d.querySelectorAll('button,input,select'))el.disabled=false;
+    clearLoading();
+    if(d!==settings)for(const el of d.querySelectorAll('button,input,select'))el.disabled=false;
     if(d===change){const old=q(change,'[name=oldPin]');old.disabled=!config.enabled;old.required=config.enabled;}
     d.querySelectorAll('[data-error],[data-google-error]').forEach(e=>{e.hidden=true;e.textContent='';});validation(d);
     if(!d.open)d.showModal();d.scrollTop=0;
@@ -311,7 +320,27 @@ dialog.record-dialog.pin-dialog {
     const actionBar=q(settings,'[data-pin-actions]');actionBar.classList.toggle('pin-settings-footer',config.enabled);if(config.enabled)settings.append(actionBar);else q(settings,'.pin-content').insertBefore(actionBar,q(settings,'form'));
     q(settings,'[data-change]').textContent=config.enabled?'PIN’i değiştir':'PIN oluştur';q(settings,'[data-remove]').hidden=!config.enabled;
   }
-  async function open(){try{config=await security.settings();settingsKey=null;if(config.enabled)settingsKey=await security.requestPin(config,pin=>security.check(pin,config));show(settings);await refresh();}catch(e){settingsMenu.show();if(!String(e.message||e).includes('PIN onayı iptal edildi'))notice(String(e.message||e));}}
+  async function open(leaveMenu){
+    let leftMenu=false;
+    try{
+      const current=await security.settings();
+      let key=null;
+      if(current.enabled){
+        if(!leaveMenu())return;
+        leftMenu=true;
+        settingsKey=null;
+        key=await security.requestPin(current,pin=>security.check(pin,current));
+      }
+      await refresh();
+      if(leftMenu?document.querySelector('dialog[open]'):!leaveMenu())return;
+      leftMenu=true;
+      settingsKey=key;
+      show(settings);
+    }catch(e){
+      if(leftMenu&&!document.querySelector('dialog[open]'))settingsMenu.show();
+      if(!String(e.message||e).includes('PIN onayı iptal edildi'))notice(String(e.message||e));
+    }
+  }
   security.requestPin=(current,check)=>new Promise((resolve,reject)=>{
     if(pending){reject(new Error('Başka bir PIN onayı bekleniyor.'));return;}window.dispatchEvent(new Event('star-pin-wait'));
     q(challenge,'form').reset();const i=q(challenge,'input');setPinLength(i,current.length);q(challenge,'.pin-dots').replaceChildren(...Array.from({length:current.length},()=>document.createElement('span')));pending={resolve,reject,check};show(challenge);i.focus();
@@ -329,7 +358,7 @@ dialog.record-dialog.pin-dialog {
     return p.verification;
   }
   q(challenge,'form').onsubmit=e=>{e.preventDefault();return verifyChallenge();};
-  challenge.addEventListener('close',()=>{if(pending){const p=pending;pending=null;p.reject(new Error('PIN onayı iptal edildi. Formdaki bilgiler korunuyor.'));}});
+  challenge.addEventListener('close',()=>{if(!challenge.open&&pending){const p=pending;pending=null;p.reject(new Error('PIN onayı iptal edildi. Formdaki bilgiler korunuyor.'));}});
   q(settings,'form').onsubmit=e=>e.preventDefault();
   let settingsSaves=Promise.resolve();
   q(settings,'form').addEventListener('change',e=>{
@@ -366,7 +395,7 @@ dialog.record-dialog.pin-dialog {
     const back=q(d,'[data-back]');if(back)back.onclick=()=>{d.close();if(d===settings)settingsMenu.show();};
     let outsideStart=false;const outside=e=>{const r=d.getBoundingClientRect();return e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom;};
     d.addEventListener('pointerdown',e=>{outsideStart=e.target===d&&outside(e);});d.addEventListener('click',e=>{if(outsideStart&&e.target===d&&outside(e))d.close();outsideStart=false;});
-    d.addEventListener('close',()=>{for(const i of d.querySelectorAll('input[type=password]'))i.value='';});
+    d.addEventListener('close',()=>{if(!d.open)for(const i of d.querySelectorAll('input[type=password]'))i.value='';});
   }
   change.addEventListener('keydown',event=>{
     if(event.key!=='Enter'||event.isComposing||event.repeat||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!event.target.matches('input[type=password]'))return;
