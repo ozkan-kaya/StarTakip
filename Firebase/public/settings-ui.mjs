@@ -1,5 +1,5 @@
 import locations from './locations.mjs?v=app-20261119-1';
-import {companyFields,currentCompany,normalizeCompany,sameCompany} from './company.mjs?v=app-20261119-1';
+import {companyFields,currentCompany,initialCompany,normalizeCompany,sameCompany} from './company.mjs?v=app-20261119-1';
 export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   function make(id,title,body){
     const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog'+(id==='companyRegenerateDialog'?' dialog-compact':'');dialog.setAttribute('aria-labelledby',id+'Title');
@@ -39,6 +39,7 @@ export function installSettingsUI({openSecurity,company,notice=()=>{}}){
     try{
       const result=await company.read();if(ticket!==loadTicket||!menu.open)return;
       const current=currentCompany(result.companyVersions);baseline={...current,...normalizeCompany(current)};revision=result.dataRevision;
+      if(!baseline.il&&!baseline.ilce&&baseline.adres===initialCompany.adres){baseline.il='Ankara';baseline.ilce='Çankaya';}
       province.value=baseline.il;districts(baseline.ilce);
       for(const key of companyFields)form.elements.namedItem(key).value=baseline[key];
       error.hidden=true;dirty();menu.close();formDialog.showModal();

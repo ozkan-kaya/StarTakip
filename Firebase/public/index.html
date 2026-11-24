@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-5"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#173c35"><meta name="apple-mobile-web-app-title" content="Star Takip">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-6"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#173c35"><meta name="apple-mobile-web-app-title" content="Star Takip">
 <style>
 :root{--ink:#173c35;--text:#243e36;--muted:#6b7c74;--paper:#f5f7f3;--line:#e2e8e1;--accent:#d4e7ad;--border-hover:#d4e7ad66;--red:#ab4e42;--shadow:0 2px 4px #173c3502,0 8px 28px #173c3504;
   /* Design tokens — stage 1: definitions only; existing rules stay unchanged. */
@@ -402,18 +402,20 @@ main{padding-inline:12px}.card{padding:18px 14px}.module-menu,.desktop-grid{gap:
 @media screen and (max-width:600px){
 main>section>.section-heading{display:block;position:relative;min-height:108px;padding-top:0;margin:0}.section-heading>div:first-child{width:100%;max-width:none}.section-heading .eyebrow{padding-right:0;max-width:none;min-height:18px;white-space:nowrap;font-size:clamp(10px,2.8vw,11px);line-height:18px;letter-spacing:0}.section-heading .app-date-bar{top:0;right:0}.section-heading .app-date-bar .date-caption{font-size:clamp(10px,2.8vw,11px);line-height:18px;letter-spacing:0;white-space:nowrap}.section-heading .page-description{min-height:0;max-width:none}.section-heading h2{overflow-wrap:anywhere}.section-heading>.actions{margin-top:8px}.module-trail{justify-content:initial}
 }
-/* Foreground requests block interaction; background synchronization stays quiet. */
+/* Modal writes and table reads each show feedback in their own area. */
 .loading-screen{position:fixed;inset:auto;max-width:none;max-height:none;margin:0;padding:20px;border:0;border-radius:20px;box-sizing:border-box;background:rgba(245,248,245,.58);color:var(--ink);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);overflow:hidden;outline:none;cursor:default;display:grid;place-items:center}
 .loading-screen[popover]:not(:popover-open){display:none}
-.loading-screen.loading-page{background:var(--paper);backdrop-filter:none;-webkit-backdrop-filter:none;inset:calc(var(--header-height,64px) + var(--demo-height,0px)) 0 0;width:100%;height:calc(100svh - var(--header-height,64px) - var(--demo-height,0px));bottom:auto;border-radius:0;z-index:40}
 .loading-content{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
 .loading-spinner{width:42px;height:42px;box-sizing:border-box;border:3px solid #d4e2d9;border-top-color:var(--ink);border-radius:50%;animation:auth-spin .8s linear infinite}
 .loading-message{margin:0;font-size:18px;line-height:1.5;font-weight:500;letter-spacing:-.25px}
-.loading-screen:not(.loading-page) .loading-spinner{width:30px;height:30px}
-.loading-screen:not(.loading-page) .loading-content{gap:12px}
-.loading-screen:not(.loading-page) .loading-message{font-size:15px}
+.loading-screen .loading-spinner{width:30px;height:30px}
+.loading-screen .loading-content{gap:12px}
+.loading-screen .loading-message{font-size:15px}
 .record-dialog:has(>.loading-screen) .detail-body{min-height:160px}
 @media(prefers-reduced-motion:reduce){.loading-spinner{animation:none}}
+
+.table-loading{display:grid;place-items:center;min-height:120px;padding:var(--s-6);color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);text-align:center}
+[data-table-loading]{display:none!important}
 
 /* Navbar: supplied layout; 720px breakpoint avoids logo overlap. */
 @media print{header{position:static;background:white;color:#173c35;padding:0 0 18px;border-bottom:2px solid #173c35}header .header-account{display:none!important}}
@@ -872,15 +874,15 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 #authScreen #signInButton .loading-spinner{width:16px;height:16px;border-width:2px;border-color:var(--surface);border-top-color:transparent}
 #authScreen #authMessage{width:100%;font-size:13px;line-height:1.5;text-align:center;overflow-wrap:anywhere;margin:var(--s-4) 0 0;color:var(--muted)}
 #authScreen #authMessage:empty{display:none}
+#authScreen #authRetry{margin-top:var(--s-4)}
 #authScreen #authMessage.hint.error{padding:var(--s-3);border:1px solid var(--red-line);border-radius:var(--radius-sm);background:var(--red-bg);color:var(--red-text)}
 @media(max-width:600px){#authScreen>.card{padding:var(--s-6)}}
 
 .sync-times{display:flex;flex-direction:column;gap:3px;min-width:0}
 </style><script src="/compact-dialog-layout.js?v=app-20261119-1"></script><script src="/receipt-layout.js?v=a5-landscape-36"></script></head><body>
 
-<div id="bootLoading" class="loading-screen loading-page" role="status" aria-live="polite"><div class="loading-content"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-message">Yükleniyor…</p></div></div>
 <header><div><h1><a class="brand" id="brandHome" href="javascript:void(0)" aria-label="Star Takip" onclick="show('home');return false;"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></a></h1></div><nav aria-label="Ana menü" hidden><button data-tab="transactions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></svg>İşlemler</button><button data-tab="parties"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m18 0v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Cari</button><button data-tab="products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Zm0 10 9-5M12 13 3 8m9 5v8M7.5 5.5l9 5"/></svg>Stok</button></nav><div class="header-account" hidden><button type="button" id="account" class="profile-trigger" aria-label="Profilinizi açın" onclick="openProfile()" disabled><span class="avatar-fallback" aria-hidden="true">★</span></button></div></header><div id="authScreen" class="auth-screen" hidden><div class="card"><div class="auth-brand" aria-label="Star Takip"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></div><div id="authLogin"><h2>Hesabınızla giriş yapın</h2><p class="auth-description">Bu uygulama yalnızca yetkili hesaplar içindir.</p><button type="button" class="primary" id="signInButton" onclick="firebaseSignIn()"><span class="auth-google-badge" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.61 24.46c0-1.36-.12-2.66-.35-3.92H24v7.43h11a9.4 9.4 0 0 1-4.08 6.16v5h6.61c3.87-3.56 6.08-8.81 6.08-14.67Z"/><path fill="#34A853" d="M24 44c5.5 0 10.12-1.82 13.5-4.87l-6.6-5c-1.83 1.23-4.18 1.97-6.9 1.97-5.3 0-9.8-3.58-11.4-8.4H5.78v5.16A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.7a12.3 12.3 0 0 1 0-7.4v-5.16H5.78a20 20 0 0 0 0 17.72l6.82-5.16Z"/><path fill="#EA4335" d="M24 11.9c3 0 5.68 1.03 7.8 3.05l5.85-5.86A19.6 19.6 0 0 0 24 4 20.4 20.4 0 0 0 5.78 15.14l6.82 5.16c1.6-4.82 6.1-8.4 11.4-8.4Z"/></svg></span><span class="auth-button-label">Google hesabıyla giriş yap</span><span class="auth-button-pending"><span class="loading-spinner" aria-hidden="true"></span>Giriş yapılıyor…</span></button><p id="authMessage" role="status" aria-live="polite"></p></div></div></div>
-<main><div id="notice" class="hint" role="status" hidden></div>
+<main hidden><div id="notice" class="hint" role="status" hidden></div>
 <div class="app-date-bar"><div id="homeDate" class="date-caption"></div></div>
 <section id="home" hidden>
   <div class="section-heading">
@@ -901,7 +903,7 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 <div id="historyViewDocs" hidden><div id="documentMenu" class="module-menu" aria-label="Çek / Senet alt menüleri"></div><div id="documentContent" hidden><div class="toolbar" hidden><button id="documentBack" type="button" onclick="goBack()">← Geri</button><h3 id="documentHeading">Çek ve Senet hareketleri</h3></div><div class="hint">Kayıt anında cariye işlenir.</div><div class="card"><div id="documentList" class="tablewrap"></div></div></div></div></section>
 <section id="transactions" hidden><div class="section-heading"><div><div class="eyebrow">İşlem yönetimi</div><h2>İşlemler</h2></div><div class="actions"><button type="button" class="primary" onclick="openTransactionEntry()">+ Yeni işlem</button></div></div></section>
 <section id="notes" hidden><div class="section-heading"><div><div class="eyebrow">İşletme notları</div><h2>Notlar</h2></div><div class="actions"><button type="button" class="primary" onclick="openNoteModal()">+ Yeni not</button></div></div><div id="noteCards"><div class="card"><h3>Kayıtlı notlar</h3><input id="noteSearch" placeholder="Başlık veya içerikte ara" aria-label="Not ara" oninput="renderNotes()"><div id="noteList" class="tablewrap"></div></div></div></section><section id="reports" hidden><div class="section-heading"><div><div class="eyebrow">Dönem analizi</div><h2>Raporlar</h2></div><div class="actions"><button onclick="window.print()">Yazdır / PDF</button><button class="primary" onclick="exportReport()">CSV indir</button></div></div><div data-period-report><div class="card report-filters"><label>Başlangıç tarihi<input id="reportStart" type="date" lang="tr-TR" onchange="renderReports()"></label><label>Bitiş tarihi<input id="reportEnd" type="date" lang="tr-TR" onchange="renderReports()"></label><label>Para birimi<select id="reportCurrency" onchange="renderReports()"><option value="TRY">TL</option><option value="USD">USD</option></select></label><div class="actions"><button data-report-preset="month" onclick="reportPreset('month')">Bu ay</button><button data-report-preset="threeMonths" onclick="reportPreset('threeMonths')">3 ay</button><button data-report-preset="all" onclick="reportPreset('all')">Tüm dönem</button></div></div><div id="reportError" class="hint error" role="alert" hidden>Başlangıç tarihi bitiş tarihinden sonra olamaz.</div><p id="reportCount" class="muted"></p></div><div id="reportMetrics" class="grid"></div><div class="card"><div class="report-heading"><h3>Ürün bazında satış ve alış</h3><span>İadeler düşülmüştür</span></div><div id="reportProducts" class="tablewrap"></div></div><div class="card"><div class="report-heading"><h3>Ödeme yöntemleri</h3><span>Çek ve senetler dahil</span></div><div id="reportMethods" class="tablewrap"></div></div><div class="card"><div class="report-heading"><h3>Cari bazında dönem özeti</h3></div><div id="reportParties" class="tablewrap"></div><p class="report-note">Güncel bakiye: Cari bölümünde.</p></div><p class="report-note" data-period-report>İptaller hariçtir. Net tutarlar kâr değildir.</p><div id="reportOverview"><div class="card report-filters"><label>Tarih<input id="financialDate" type="date" lang="tr-TR" onchange="renderSummary()"></label><button type="button" onclick="$('financialDate').value=today();renderSummary()">Bugün</button></div><p class="report-note">Bakiyeler seçilen tarihe kadarki aktif kayıtlardan hesaplanır.</p><div id="metrics" class="grid"></div><div class="hint"><b>+ Alacağımız</b> / <b>− Borcumuz</b></div></div><div class="card" id="reportRecent"><h3>Son hareketler</h3><div id="recent" class="tablewrap"></div></div></section>
-<section id="transactionReceiptPage" hidden><div class="section-heading"><div><div class="eyebrow">İşlem yönetimi</div><h2>İşlem dökümü</h2><p class="page-description">İşlemi incele, döküm al</p></div></div><div class="module-trail receipt-page-toolbar"><button type="button" class="small" onclick="show('transactions',{sub:'list'})">← Geri</button><div class="actions"><select id="receiptPaperSize" class="receipt-paper-size" aria-label="PDF kağıt boyutu"><option value="a5">A5</option><option value="a4">A4</option></select><div id="receiptVersionControl" class="receipt-version-control" hidden><span id="receiptVersionLabel" class="receipt-paper-size receipt-version-label" aria-hidden="true"></span><select id="receiptVersion" aria-label="Belge sürümü"></select></div><button type="button" class="small new-shortcut" id="printReceiptPage" data-print-current-receipt>PDF/Yazdır</button></div></div><p id="receiptPageMessage" role="status"></p><div id="receiptPageContent" class="receipt-page-paper"></div></section><footer><div class="sync-times"><span id="lastOperation"></span></div><span class="app-version" aria-label="Sürüm 1.3.5">v1.3.5</span></footer></main><div id="transactionPrint" hidden></div>
+<section id="transactionReceiptPage" hidden><div class="section-heading"><div><div class="eyebrow">İşlem yönetimi</div><h2>İşlem dökümü</h2><p class="page-description">İşlemi incele, döküm al</p></div></div><div class="module-trail receipt-page-toolbar"><button type="button" class="small" onclick="show('transactions',{sub:'list'})">← Geri</button><div class="actions"><select id="receiptPaperSize" class="receipt-paper-size" aria-label="PDF kağıt boyutu"><option value="a5">A5</option><option value="a4">A4</option></select><div id="receiptVersionControl" class="receipt-version-control" hidden><span id="receiptVersionLabel" class="receipt-paper-size receipt-version-label" aria-hidden="true"></span><select id="receiptVersion" aria-label="Belge sürümü"></select></div><button type="button" class="small new-shortcut" id="printReceiptPage" data-print-current-receipt>PDF/Yazdır</button></div></div><p id="receiptPageMessage" role="status"></p><div id="receiptPageContent" class="receipt-page-paper"></div></section><footer><div class="sync-times"><span id="lastOperation"></span></div><span class="app-version" aria-label="Sürüm 1.3.5">v1.3.7</span></footer></main><div id="transactionPrint" hidden></div>
 <dialog id="transactionSavedDialog" class="record-dialog saved-dialog dialog-compact" aria-labelledby="transactionSavedTitle"><div class="detail-header"><div><div class="eyebrow">İşlemler</div><h2 id="transactionSavedTitle">İşlem kaydedildi</h2></div><button type="button" class="detail-close" aria-label="Onay penceresini kapat" onclick="$('transactionSavedDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="transactionSavedSummary"></div></div></dialog><dialog id="noteDialog" class="record-dialog" aria-labelledby="noteModalTitle"><div class="detail-header"><div><div class="eyebrow">Notlar</div><h2 id="noteModalTitle">Yeni not</h2></div><button type="button" class="detail-close" aria-label="Notu kapat" onclick="$('noteDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><form id="noteForm"><input id="noteId" type="hidden"><input id="noteVersion" type="hidden"><label>Not başlığı<input id="noteTitle" required maxlength="120" autocomplete="off"></label><label>İçerik<textarea id="noteContent" required maxlength="10000" rows="10"></textarea></label><p id="noteMetadata" class="muted"></p><div id="noteError" class="hint error" hidden role="alert"></div><div class="actions modal-actions"><button type="button" id="noteReload" hidden onclick="reloadNote()">Güncel notu aç</button><div class="modal-main-actions"><button type="button" onclick="$('noteDialog').close()">Vazgeç</button><button type="submit" class="primary">Kaydet</button></div></div></form></div></dialog><dialog id="tradeDialog" class="record-dialog trade-dialog" aria-labelledby="tradeModalTitle"><div class="detail-header"><div><div class="eyebrow">İşlemler</div><h2 id="tradeModalTitle">Yeni işlem</h2></div><button type="button" class="detail-close" aria-label="İşlem penceresini kapat" onclick="$('tradeDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="tradeEntryError" class="hint error" hidden role="alert"></div><label id="entryActionField" hidden>İşlem türü<select id="entryActionChoice" onchange="unifiedEntryChanged()"><option value="">İşlem türünü seçin</option><optgroup label="Alış/Satış"><option value="SATIS">Satış</option><option value="ALIS">Alış</option></optgroup><optgroup label="İade işlemleri"><option value="SATIS_IADE">Satış iadesi</option><option value="ALIS_IADE">Alış iadesi</option></optgroup><optgroup label="Ödeme/Tahsilat"><option value="TAHSILAT">Tahsilat</option><option value="ODEME">Ödeme</option></optgroup><optgroup label="Stok işlemleri"><option value="STOK_GIRIS">Stok girişi</option><option value="STOK_CIKIS">Stok çıkışı</option><option value="count">Sayım</option></optgroup></select></label><label id="stockActionField" hidden>İşlem türü<select id="stockAction" onchange="stockModalChanged()"><option value="STOK_GIRIS">Stok girişi</option><option value="STOK_CIKIS">Stok çıkışı</option><option value="count">Sayım</option></select></label><div id="stockCountHeader" class="fields" hidden><label>Tarih<input type="date" lang="tr-TR" id="countDate" form="stockCountForm" required></label></div><div id="transactionHost"></div><div id="stockCountHost" hidden></div></div></dialog><dialog id="profileDialog" class="record-dialog profile-dialog" aria-labelledby="profileTitle"><div class="detail-header"><div><div class="eyebrow">Hesap</div><h2 id="profileTitle">Profil</h2></div><button type="button" class="detail-close" aria-label="Kapat" onclick="$('profileDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="profileAvatar" class="profile-avatar"></div><a class="profile-edit" href="https://myaccount.google.com/personal-info" target="_blank" rel="noopener noreferrer">Fotoğrafı değiştir ↗</a><div class="profile-field"><span class="muted">Ad soyad</span><div><strong id="profileName"></strong><a href="https://myaccount.google.com/personal-info" target="_blank" rel="noopener noreferrer">Değiştir ↗</a></div></div><div class="profile-field"><span class="muted">Google hesabı</span><div id="profileEmail"></div></div><p id="profileMessage" class="muted" role="status"></p><button type="button" class="danger profile-logout" onclick="signOut()">Çıkış yap</button></div></dialog><dialog id="voidDialog" class="record-dialog compact-dialog dialog-compact" aria-labelledby="voidTitle"><div class="detail-header"><div><div class="eyebrow">İşlem iptali</div><h2 id="voidTitle">İşlemi iptal et</h2></div><button type="button" class="detail-close" aria-label="İptal penceresini kapat" onclick="$('voidDialog').close()">×</button></div><div class="detail-body"><form id="voidForm" onsubmit="saveVoidTransaction(event)"><input id="voidId" type="hidden"><input id="voidGroup" type="hidden"><p id="voidScope" class="detail-note"></p><label>İptal nedeni<textarea id="voidReason" required maxlength="300" rows="3" placeholder="İptal nedenini yazın"></textarea></label><div class="actions modal-actions"><div class="modal-main-actions"><button type="button" onclick="$('voidDialog').close()">Vazgeç</button><button type="submit" class="danger" id="saveVoid">İptal et</button></div></div></form></div></dialog><dialog id="confirmDialog" class="record-dialog compact-dialog dialog-compact" aria-labelledby="confirmTitle"><div class="detail-header"><div><div class="eyebrow" id="confirmEyebrow" style="color:var(--danger)">Dikkat</div><h2 id="confirmTitle">Kaydı sil</h2></div><button type="button" class="detail-close" aria-label="Kapat" onclick="$('confirmDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><p id="confirmMessage" style="font-size:14px;line-height:1.5;margin:0 0 20px;color:var(--ink)"></p><div id="confirmWarning" class="hint error" style="margin-bottom:20px;display:none"></div><div class="actions modal-actions"><div class="modal-main-actions"><button type="button" id="cancelConfirmDialog">Vazgeç</button><button type="button" id="confirmAcceptBtn" class="danger primary">Evet, sil</button></div></div></div></dialog>
 <dialog id="partyDialog" class="record-dialog" aria-labelledby="partyModalTitle"><div class="detail-header"><div><div class="eyebrow">Cari hesap</div><h2 id="partyModalTitle">Cari kartı</h2></div><button type="button" class="detail-close" aria-label="Kapat" onclick="$('partyDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><form id="partyForm"><input id="partyId" type="hidden"><div class="fields party-identity-fields"><label>Tic. Ünvan<input id="partyName" required maxlength="120" autocomplete="organization"></label><label>Kişi adı<input id="partyContactName" maxlength="120" autocomplete="name"></label><label>Telefon<input id="partyPhone" type="tel" maxlength="40"></label><label>E-posta adresi<input id="partyEmail" type="email" maxlength="254" autocomplete="email"></label><label>İl<select id="partyProvince" autocomplete="address-level1"><option value="">İl seçin</option></select></label><label>İlçe<select id="partyDistrict" autocomplete="address-level2" disabled><option value="">İlçe seçin</option></select></label></div><label>Adres<textarea id="partyAddress" rows="3" maxlength="1000" autocomplete="street-address"></textarea></label><label>Not<textarea id="partyNote" maxlength="500"></textarea></label><label class="checkrow" id="openingToggleField"><input type="checkbox" role="switch" class="entry-switch" id="partyOpeningToggle" aria-controls="partyOpeningFields" onchange="syncPartyOpening()"><span>Açılış bakiyesi</span></label><div id="partyOpeningFields" hidden><input type="hidden" id="partyOpeningId"><div class="fields"><label class="wide">Tarih<input type="date" lang="tr-TR" id="partyOpeningDate"></label></div><div class="opening-currencies"><div class="opening-currency"><input type="hidden" id="partyOpeningIdTRY"><strong>TL</strong><label>Bakiye yönü<select id="partyOpeningDirectionTRY"><option value="ALACAK">Alacağımız</option><option value="BORC">Borcumuz</option></select></label><label>Tutar<input id="partyOpeningAmountTRY" type="number" min="0" step="0.01" inputmode="decimal"></label></div><div class="opening-currency"><input type="hidden" id="partyOpeningIdUSD"><strong>USD</strong><label>Bakiye yönü<select id="partyOpeningDirectionUSD"><option value="ALACAK">Alacağımız</option><option value="BORC">Borcumuz</option></select></label><label>Tutar<input id="partyOpeningAmountUSD" type="number" min="0" step="0.01" inputmode="decimal"></label></div></div></div><div class="actions modal-actions"><button type="button" id="archivePartyBtn" class="danger" style="display:none">Arşivle</button><div class="modal-main-actions"><button type="button" id="cancelPartyModal">Vazgeç</button><button type="submit" class="primary">Cariyi kaydet</button></div></div></form></div></dialog>
 <dialog id="productDialog" class="record-dialog" aria-labelledby="productModalTitle"><div class="detail-header"><div><div class="eyebrow">Ürün tanımlama</div><h2 id="productModalTitle">Ürün kartı</h2></div><button type="button" class="detail-close" aria-label="Kapat" onclick="$('productDialog').close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><form id="productForm"><input id="productId" type="hidden"><div class="fields product-identity"><label>Ürün kodu<input id="productCode" required maxlength="40" placeholder="Otomatik ürün kodu" readonly></label><label>Ürün adı<input id="productName" required maxlength="120"></label></div><div id="productInventory" class="fields product-inventory"><label><div class="field-heading"><span>Birim</span><button type="button" class="inline-add" id="manageUnits">+ Birim</button></div><select id="productUnit" required onchange="syncProductUnitPolicy()"></select><span id="productFractionalInfo" class="fractional-unit-note" hidden>ⓘ Bu birimde ondalıklı miktar kullanılabilir.</span></label><label id="productOpeningField">Başlangıç stoğu<input id="productOpeningAmount" type="number" min="0" step="0.001" value="0" inputmode="decimal"><input id="productOpeningId" type="hidden"></label></div><input id="productFractional" type="checkbox" disabled hidden><div class="fields"><label>Satış birim fiyatı<input id="productPrice" type="number" min="0" step="0.01" value="0" required></label><label>Para birimi<select id="productCurrency"><option value="TRY">TL</option><option value="USD">USD</option></select></label></div><div id="productCriticalFields" class="fields"><label id="productLowField">Kritik stok seviyesi<input id="productLow" type="number" min="0" step="0.001" value="0" required></label></div><div class="actions modal-actions"><button type="button" id="archiveProductBtn" class="danger" style="display:none">Arşivle</button><div class="modal-main-actions"><button type="button" id="cancelProductModal">Vazgeç</button><button type="submit" class="primary">Ürünü kaydet</button></div></div></form></div></dialog>
@@ -910,14 +912,17 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 <dialog id="quickMasterDialog" class="record-dialog" aria-labelledby="quickMasterTitle"><div class="detail-header"><div><div class="eyebrow">Hızlı ekle</div><h2 id="quickMasterTitle"></h2></div><button id="quickMasterClose" type="button" class="detail-close" aria-label="Hızlı eklemeyi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="quickMasterError" class="hint error" role="alert" hidden></div><div id="quickMasterHost"></div></div></dialog>
 <div id="loadingScreen" class="loading-screen" popover="manual" hidden role="status" aria-live="polite" aria-atomic="true"><div class="loading-content"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-message">Yükleniyor…</p></div></div>
 <script>
+let startupPending=true;
 window.starStartupFailed=message=>{
-  const el=document.getElementById('bootLoading');if(!el||el.hidden)return;
+  if(!startupPending)return;
+  const screen=document.getElementById('authScreen'),login=document.getElementById('signInButton');
   clearTimeout(window.starBootTimer);
-  el.querySelector('.loading-message').textContent=typeof message==='string'?message:'Panel başlatılamadı. Lütfen yeniden deneyin.';
-  el.querySelector('.loading-spinner').hidden=true;
-  if(!el.querySelector('button')){const retry=document.createElement('button');retry.type='button';retry.textContent='Yeniden dene';retry.onclick=()=>window.location.reload();el.querySelector('.loading-content').append(retry);}
+  screen.setAttribute('aria-busy','false');login.setAttribute('aria-busy','false');login.removeAttribute('data-loading');
+  document.getElementById('authMessage').textContent=typeof message==='string'?message:'Panel başlatılamadı. Lütfen yeniden deneyin.';
+  if(!document.getElementById('authRetry')){const retry=document.createElement('button');retry.id='authRetry';retry.type='button';retry.textContent='Yeniden dene';retry.onclick=()=>window.location.reload();document.getElementById('authMessage').after(retry);}
 };
 window.starBootTimer=setTimeout(()=>window.starStartupFailed('Bağlantı kurulması beklenenden uzun sürdü. Yeniden deneyebilirsiniz.'),15000);
+window.starStartupReady=()=>{startupPending=false;clearTimeout(window.starBootTimer);document.getElementById('authRetry')?.remove();};
 window.addEventListener('error',window.starStartupFailed);
 window.addEventListener('unhandledrejection',window.starStartupFailed);
 </script>
@@ -938,11 +943,11 @@ document.addEventListener('click',event=>{
 },true);
 </script>
 <script src="/entry-search.js?v=app-20261119-1"></script><script type="module">
-import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-5';
+import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-6';
 import {installPinUI} from '/pin-ui.mjs?v=app-20261119-1';
 import * as companyModel from '/company.mjs?v=app-20261119-1';
 window.starCompanyModel=companyModel;
-import {installFreshnessUI,preserveForms} from '/freshness-ui.mjs?v=app-20261123-2';
+import {installFreshnessUI,preserveForms} from '/freshness-ui.mjs?v=app-20261123-3';
 window.starFirebase=await createFirebaseBridge().catch(error=>{window.starStartupFailed?.();throw error;});
 const companyBackend={
   read:()=>window.starFirebase.call('getCompanyState'),
@@ -1071,19 +1076,13 @@ function showDialogAtTop(dialog){
 // Each foreground request owns its loading token, including concurrent requests.
 const foregroundRequests=new Map();
 const loadingRegions=new Map();
-function foregroundTarget(name){
-  if(['beginSession','endSession','loadPage'].includes(name))return null;
-  const active=document.activeElement;
-  const dialog=active?.closest?.('dialog[open]')||Array.from(document.querySelectorAll('dialog.record-dialog[open]')).at(-1);
-  if(dialog)return dialog;
-  return null;
+function activeLoadingDialog(){
+  return document.activeElement?.closest?.('dialog[open]')||Array.from(document.querySelectorAll('dialog.record-dialog[open]')).at(-1);
 }
 function positionLoadingRegion(host,region){
-  const layer=region.layer;
-  if(!host){const top=document.querySelector('header').getBoundingClientRect().bottom;Object.assign(layer.style,{top:top+'px',left:'0px',width:'100%',height:'calc(100svh - '+top+'px)',borderRadius:'0px'});return;}
-  const rect=host.getBoundingClientRect(),header=host.matches('dialog')?host.querySelector('.detail-header'):null;
+  const rect=host.getBoundingClientRect(),header=host.querySelector('.detail-header');
   const top=Math.max(0,rect.top,header?.getBoundingClientRect().bottom||0),bottom=Math.min(innerHeight,rect.bottom);
-  Object.assign(layer.style,{top:top+'px',left:Math.max(0,rect.left)+'px',width:Math.max(0,Math.min(document.documentElement.clientWidth,rect.right)-Math.max(0,rect.left))+'px',height:Math.max(0,bottom-top)+'px',visibility:host.getClientRects().length&&bottom>top?'visible':'hidden'});
+  Object.assign(region.layer.style,{top:top+'px',left:Math.max(0,rect.left)+'px',width:Math.max(0,Math.min(document.documentElement.clientWidth,rect.right)-Math.max(0,rect.left))+'px',height:Math.max(0,bottom-top)+'px',visibility:host.getClientRects().length&&bottom>top?'visible':'hidden'});
 }
 function releaseLoadingRegion(host,region){
   region.observer?.disconnect();region.layer.remove();
@@ -1094,28 +1093,43 @@ function releaseLoadingRegion(host,region){
 function updateLoadingRegions(){for(const [host,region] of loadingRegions)positionLoadingRegion(host,region);}
 window.addEventListener('resize',updateLoadingRegions,{passive:true});
 document.addEventListener('scroll',updateLoadingRegions,{capture:true,passive:true});
-function foregroundMessage(){return 'Yükleniyor…';}
-function clearForegroundLoading(){clearTimeout(window.starBootTimer);foregroundRequests.clear();for(const [host,region] of loadingRegions)releaseLoadingRegion(host,region);$('bootLoading').hidden=true;}
-function beginForegroundLoading(name,arg){
-  const token=Symbol(name),host=foregroundTarget(name),message=foregroundMessage(name,arg);
+let finishTableLoading=null;
+function beginTableLoading(host){
+  finishTableLoading?.();
+  const status=document.createElement('div');
+  status.className='table-loading';status.setAttribute('role','status');status.textContent='Yükleniyor…';
+  host.before(status);host.setAttribute('data-table-loading','');
+  const finish=()=>{
+    if(finishTableLoading!==finish)return;
+    status.remove();host.removeAttribute('data-table-loading');finishTableLoading=null;
+  };
+  finishTableLoading=finish;
+  return finish;
+}
+function clearForegroundLoading(){
+  finishTableLoading?.();
+  foregroundRequests.clear();
+  for(const [host,region] of loadingRegions)releaseLoadingRegion(host,region);
+}
+function beginForegroundLoading(host){
+  if(!host)return ()=>{};
+  const token=Symbol();
   let region=loadingRegions.get(host);
   if(!region){
-    const layer=$('loadingScreen').cloneNode(true);layer.removeAttribute('id');layer.hidden=false;if(!host)layer.classList.add('loading-page');
-    (host?.matches('dialog')?host:document.body).appendChild(layer);
-    const inertHost=host?.matches('dialog')?host.querySelector('.detail-body'):host;
-    region={layer,tokens:new Map(),busy:host?.getAttribute('aria-busy')??null,observer:null,inertHost,inert:inertHost?.inert||false};loadingRegions.set(host,region);
+    const layer=$('loadingScreen').cloneNode(true);layer.removeAttribute('id');layer.hidden=false;host.appendChild(layer);
+    const inertHost=host.querySelector('.detail-body');
+    region={layer,tokens:new Set(),busy:host.getAttribute('aria-busy'),observer:null,inertHost,inert:inertHost?.inert||false};loadingRegions.set(host,region);
     if(inertHost)inertHost.inert=true;
-    if(host){host.setAttribute('aria-busy','true');region.observer=new ResizeObserver(()=>positionLoadingRegion(host,region));region.observer.observe(host);}
+    host.setAttribute('aria-busy','true');region.observer=new ResizeObserver(()=>positionLoadingRegion(host,region));region.observer.observe(host);
     layer.addEventListener('wheel',event=>event.preventDefault(),{passive:false});
     layer.addEventListener('touchmove',event=>event.preventDefault(),{passive:false});
     positionLoadingRegion(host,region);if(typeof layer.showPopover==='function')layer.showPopover();else layer.removeAttribute('popover');
   }
-  foregroundRequests.set(token,host);region.tokens.set(token,message);region.layer.querySelector('.loading-message').textContent=message;
+  foregroundRequests.set(token,host);region.tokens.add(token);
   return ()=>{
     if(!foregroundRequests.delete(token))return;
     region.tokens.delete(token);
     if(!region.tokens.size)releaseLoadingRegion(host,region);
-    else region.layer.querySelector('.loading-message').textContent=Array.from(region.tokens.values()).at(-1);
   };
 }
 let noticeTimer=null,noticeFadeTimer=null;
@@ -1178,15 +1192,14 @@ async function ensureDataScope(scope){
   const request=call('getModuleState',{scope}).then(result=>{if(epoch!==dataEpoch||!state)return;if(applyFirebasePatch(result))markDataLoaded(scope);}).finally(()=>{if(epoch===dataEpoch)pendingDataScopes.delete(scope);});
   pendingDataScopes.set(scope,request);return request;
 }
-function deferViewData(scopes,retry,{pageLoading=false}={}){
+function deferViewData(scopes,retry,{table,dialog}={}){
   const intent=++dataIntent,epoch=dataEpoch;
-  if($('notice').textContent==='Yükleniyor…')notice('');
   if(scopes.every(scope=>loadedDataScopes.has(scope)))return false;
-  notice('Yükleniyor…');
-  let finish=()=>{};if(pageLoading){try{finish=beginForegroundLoading('loadPage');}catch(error){loadingFailure(error);}}
+  let finish=()=>{};
+  try{if(table)finish=beginTableLoading(table);else if(dialog)finish=beginForegroundLoading(dialog);}catch(error){loadingFailure(error);}
   Promise.all(scopes.map(ensureDataScope)).then(()=>{
     if(intent!==dataIntent||epoch!==dataEpoch||!state)return;
-    render();notice('');retry();
+    finish();render();notice('');retry();
   }).catch(error=>{if(intent===dataIntent&&epoch===dataEpoch)showActionError(error,false);}).finally(()=>{try{finish();}catch(error){loadingFailure(error);}});
   return true;
 }
@@ -1210,7 +1223,7 @@ function clearDataCache(){dataEpoch++;dataIntent++;loadedDataScopes.clear();pend
 function loadingFailure(error){try{clearForegroundLoading();}catch{}console.warn('Loading indicator:',error);}
 function call(name,arg){
   let finish=()=>{};
-  try{finish=beginForegroundLoading(name,arg);}catch(error){loadingFailure(error);}
+  try{if(WRITE_ACTIONS.has(name))finish=beginForegroundLoading(activeLoadingDialog());}catch(error){loadingFailure(error);}
   return callRequest(name,arg).finally(()=>{try{finish();}catch(error){loadingFailure(error);}});
 }
 function callRequest(name,arg){
@@ -1351,7 +1364,7 @@ function show(name,{urlMode='push',sub=null,doc='',receiptId='',movementScope=''
   if(!busy)clearForegroundLoading();
   const isSubOpen=!!moduleViews.get(activePage)?.key;
   if(urlMode==='push'&&activePage===name&&!isSubOpen&&navigationReady&&!sub)urlMode='none';
-  dataIntent++;if($('notice').textContent==='Yükleniyor…')notice('');
+  dataIntent++;
   resetPageFilters(activePage);
   navigationSerial++;activeReceiptId='';
   activePage=name;
@@ -1413,7 +1426,7 @@ const entryModalConfig={
 function deferDialogData(id,scopes,retry){
   if(scopes.every(scope=>loadedDataScopes.has(scope)))return false;
   const dialog=$(id);showDialogAtTop(dialog);
-  return deferViewData(scopes,()=>{if(dialog.open)retry();});
+  return deferViewData(scopes,()=>{if(dialog.open)retry();},{dialog});
 }
 let unifiedEntryMode=false;
 function openUnifiedEntry(kind=''){
@@ -2898,7 +2911,6 @@ function resetDocumentMenu(){
   }
 }
 function openDocumentList(method,{urlMode='push'}={}){
-  if(deferViewData(['ledger'],()=>openDocumentList(method,{urlMode})))return;
   if(!$('documentContent').hidden)resetPageFilters('history');documentFilter=method||'';tablePages.delete('documentList');$('documentMenu').hidden=true;$('documentContent').hidden=false;
   const docTitle=method==='CEK'?'Çek hareketleri':method==='SENET'?'Senet hareketleri':'Çek ve Senet hareketleri';
   $('documentHeading').textContent=docTitle;
@@ -2907,7 +2919,9 @@ function openDocumentList(method,{urlMode='push'}={}){
   if(view?.headingEl)view.headingEl.textContent=docTitle;
   document.title=docTitle+' · Çek / senet · Hareketler · Star Takip';
   writePageUrl('history',urlMode,'documents',documentFilter);
-  renderDocuments();$('documentBack').focus({preventScroll:true});
+  $('documentBack').focus({preventScroll:true});
+  if(deferViewData(['ledger'],renderDocuments,{table:$('documentList')}))return;
+  renderDocuments();
 }
 
 let pendingNoteRequest=null;
@@ -2949,9 +2963,11 @@ function goBack(){
   if(activePage==='home')return;
   const view=moduleViews.get(activePage);
   if(activePage==='history'&&view?.key==='documents'&&!$('documentContent').hidden){
+    dataIntent++;finishTableLoading?.();
     resetPageFilters('history');resetDocumentMenu();window.scrollTo(0,0);return;
   }
   if(view?.key){
+    dataIntent++;finishTableLoading?.();
     resetPageFilters(activePage);resetModulePage(activePage);writePageUrl(activePage,'push');document.title=pageTitles[activePage]+' · Star Takip';window.scrollTo(0,0);return;
   }
   show('home');
@@ -3093,7 +3109,6 @@ function openModule(page,key,{urlMode='push',movementScope='',movementProduct=''
     if(key==='entry'||entryGroups.transaction.includes(key)){openTradeModal(key);return;}
   }
   if(key==='new'){if(page==='parties')openPartyModal();else if(page==='notes')openNoteModal();else openProductModal();return;}
-  if(deferViewData(moduleScopes(page,key),()=>openModule(page,key,{urlMode,movementScope,movementProduct,movementParty,movementMethod}),{pageLoading:true}))return;
   if(view.key&&view.key!==key)resetPageFilters(page);view.key=key;
   view.menu.hidden=true;view.content.hidden=false;view.trail.hidden=false;if(view.actions)view.actions.hidden=false;
   const item=view.items.find(item=>item[0]===key);
@@ -3109,6 +3124,11 @@ function openModule(page,key,{urlMode='push',movementScope='',movementProduct=''
   Object.entries(view.panels).forEach(([name,panel])=>panel.hidden=name!==panelKey);
   if((page==='parties'||page==='products')&&view.actions)view.actions.hidden=key!=='list';
   if(page==='reports'){const periodReport=!['overview','recent','stock'].includes(key);view.periodControls.forEach(el=>el.hidden=!periodReport);if(view.actions)view.actions.hidden=!periodReport;}
+  const table=view.panels[panelKey]?.querySelector('.tablewrap');
+  const loadingTarget=page==='products'&&key==='prices'&&table?.closest('[hidden]')?$('priceHistoryPrompt'):table;
+  if(deferViewData(moduleScopes(page,key),()=>openModule(page,key,{urlMode:'none',movementScope,movementProduct,movementParty,movementMethod}),{table:loadingTarget})){
+    window.scrollTo(0,0);view.trail.querySelector('button').focus({preventScroll:true});return;
+  }
   if(page==='products'){if(key==='list')renderProducts();if(key==='movements')renderStockLedger();if(key==='prices')renderPriceHistory();if(key==='count')syncStockCount();}
   if(page==='parties'&&key==='list')renderParties();
   if(page==='parties'&&key==='movements')renderPartyMovements();
@@ -3148,12 +3168,16 @@ function syncHeaderOffset(){const root=document.documentElement;root.style.setPr
 window.starEarlyHeaderObserver?.disconnect();const headerObserver=new ResizeObserver(syncHeaderOffset);headerObserver.observe(document.querySelector('header'));window.addEventListener('resize',syncHeaderOffset,{passive:true});syncHeaderOffset();
 $('reportStart').value=today().slice(0,7)+'-01';$('reportEnd').value=today();
 $('txDate').value=today();$('txDate').max=today();
-window.starFreshnessUI=installFreshnessUI({bridge:window.starFirebase,getState:()=>state,getScopes:()=>[...loadedDataScopes],beginLoading:()=>beginForegroundLoading('loadPage'),notice:message=>notice(message)});
+function needsTableData(button){
+  const {modulePage:page,moduleKey:key}=button.dataset;
+  return !!moduleViews.get(page)?.panels[key]?.querySelector('.tablewrap')&&moduleScopes(page,key).some(scope=>!loadedDataScopes.has(scope));
+}
+window.starFreshnessUI=installFreshnessUI({bridge:window.starFirebase,getState:()=>state,getScopes:()=>[...loadedDataScopes],needsTableData,notice:message=>notice(message)});
 for(const event of ['popstate','hashchange'])window.addEventListener(event,()=>{if(!state&&!$('authScreen').hidden)routeToLogin();});
 window.addEventListener('offline',handleOffline);window.addEventListener('online',()=>{if(connectionNotice){notice('');updateSyncStatus();}});if(!navigator.onLine)handleOffline();
-{clearForegroundLoading();void signIn();}
+{window.starStartupReady();void signIn();}
 
-Object.assign(window,{saveVoidTransaction,openUnifiedEntry,unifiedEntryChanged,openPartyStatement,mergedHistoryScope,generalMovementRows,renderGeneralMovements,partyMovementRows,renderPartyMovements,openUnitSettings,selectUnitSettings,saveUnitSettings,openTransactionReceipt,syncProductUnitPolicy,syncProductUnitInputs,$,today,displayDate,displayDateTime,privatePartyBalance,balanceLines,setupKeyboardHints,setupDialogs,closeDialogs,showDialogAtTop,foregroundTarget,positionLoadingRegion,releaseLoadingRegion,updateLoadingRegions,foregroundMessage,clearForegroundLoading,beginForegroundLoading,hideNotice,notice,connectionError,normalizeFailure,moduleScopes,markDataLoaded,ensureDataScope,deferViewData,refreshLoadedData,callAndRefresh,clearDataCache,loadingFailure,call,callRequest,showActionError,handleOffline,setBusy,getPathContext,parseRoute,routePage,localRouteTarget,localRoutePage,writePageUrl,initializeNavigation,show,entryOptions,setEntryContext,historyView,transactionView,deferDialogData,openEntryModal,openTradeModal,openPaymentModal,configureEntryModal,stockModalChanged,openStockModal,openTransactionEntry,syncPartyOpening,resetPartyOpening,lookup,table,resetPageFilters,pagedTable,fillSelect,updateSyncStatus,avatarContent,renderProfile,openProfile,setAuthLoading,lockApp,unlockApp,firebaseSignIn,signIn,signOut,loadState,draftValue,restoreDraftValue,focusField,focusEntry,rememberKindDraft,restoreKindDraft,applyEntryDefaults,suggestedPrice,entryCurrencyChanged,updateBalanceSuggestion,shortcutForm,handleAppShortcut,openQuickMaster,transactionItems,readMainLine,entryLines,copyExtraLines,entryLineAmount,validEntryLine,lineOptions,enhanceLineNumbers,stepLineNumber,renderExtraLines,syncLineButtons,remainingLineStock,updateLineTotals,addItemLine,removeItemLine,updateExtraInput,validateStockEntry,renderTransactionProducts,renderMovementPartyProducts,renderTransactionItems,syncFormChoices,render,recordLink,detailGrid,detailSection,detailTime,detailQuantity,detailMovements,renderRecordDetail,openRecordDetail,financialSummaryAt,renderSummary,kindChanged,lineCurrencyChanged,productChanged,enablePaymentSwitchDrag,methodChanged,preview,closeMasterModal,openPartyModal,openProductModal,resetMaster,editMaster,renderParties,renderProducts,statusTag,documentTag,movementMethodLabel,effectiveDate,historyPreset,calculateHistoryRows,renderHistory,setupMovementFilters,movementFilterOptions,filterPaymentMovements,renderDocuments,renderPayments,promptArchiveMaster,executeMasterLifecycle,bindActions,mutate,voidTx,historyCsvRows,exportCsv,metricCard,calculateReport,reportPresetStart,reportPreset,renderReports,exportReport,operationOrder,stockLedgerRows,priceHistoryRows,syncPeriodSelection,periodFor,openPartyPayment,openProductTool,renderStockLedger,renderPriceHistory,currencyLabel,renderTradeList,syncStockCount,previewStockCount,refreshStockCount,saveStockCount,showTransactionSaved,receiptMarkup,printMarkup,printTransaction,historyReceiptMarkup,printHistory,operationalPanel,resetDocumentMenu,openDocumentList,renderNotes,openNoteModal,reloadNote,saveNoteEntry,navigateToModule,goBack,alignDescriptionSpacing,setPageDescription,setEntryDescription,navigationIcon,navigationCard,moduleSubtitle,setupHomeNavigation,setupModuleNavigation,resetModulePage,openModule,syncHeaderOffset});
+Object.assign(window,{saveVoidTransaction,openUnifiedEntry,unifiedEntryChanged,openPartyStatement,mergedHistoryScope,generalMovementRows,renderGeneralMovements,partyMovementRows,renderPartyMovements,openUnitSettings,selectUnitSettings,saveUnitSettings,openTransactionReceipt,syncProductUnitPolicy,syncProductUnitInputs,$,today,displayDate,displayDateTime,privatePartyBalance,balanceLines,setupKeyboardHints,setupDialogs,closeDialogs,showDialogAtTop,positionLoadingRegion,releaseLoadingRegion,updateLoadingRegions,clearForegroundLoading,beginForegroundLoading,hideNotice,notice,connectionError,normalizeFailure,moduleScopes,markDataLoaded,ensureDataScope,deferViewData,refreshLoadedData,callAndRefresh,clearDataCache,loadingFailure,call,callRequest,showActionError,handleOffline,setBusy,getPathContext,parseRoute,routePage,localRouteTarget,localRoutePage,writePageUrl,initializeNavigation,show,entryOptions,setEntryContext,historyView,transactionView,deferDialogData,openEntryModal,openTradeModal,openPaymentModal,configureEntryModal,stockModalChanged,openStockModal,openTransactionEntry,syncPartyOpening,resetPartyOpening,lookup,table,resetPageFilters,pagedTable,fillSelect,updateSyncStatus,avatarContent,renderProfile,openProfile,setAuthLoading,lockApp,unlockApp,firebaseSignIn,signIn,signOut,loadState,draftValue,restoreDraftValue,focusField,focusEntry,rememberKindDraft,restoreKindDraft,applyEntryDefaults,suggestedPrice,entryCurrencyChanged,updateBalanceSuggestion,shortcutForm,handleAppShortcut,openQuickMaster,transactionItems,readMainLine,entryLines,copyExtraLines,entryLineAmount,validEntryLine,lineOptions,enhanceLineNumbers,stepLineNumber,renderExtraLines,syncLineButtons,remainingLineStock,updateLineTotals,addItemLine,removeItemLine,updateExtraInput,validateStockEntry,renderTransactionProducts,renderMovementPartyProducts,renderTransactionItems,syncFormChoices,render,recordLink,detailGrid,detailSection,detailTime,detailQuantity,detailMovements,renderRecordDetail,openRecordDetail,financialSummaryAt,renderSummary,kindChanged,lineCurrencyChanged,productChanged,enablePaymentSwitchDrag,methodChanged,preview,closeMasterModal,openPartyModal,openProductModal,resetMaster,editMaster,renderParties,renderProducts,statusTag,documentTag,movementMethodLabel,effectiveDate,historyPreset,calculateHistoryRows,renderHistory,setupMovementFilters,movementFilterOptions,filterPaymentMovements,renderDocuments,renderPayments,promptArchiveMaster,executeMasterLifecycle,bindActions,mutate,voidTx,historyCsvRows,exportCsv,metricCard,calculateReport,reportPresetStart,reportPreset,renderReports,exportReport,operationOrder,stockLedgerRows,priceHistoryRows,syncPeriodSelection,periodFor,openPartyPayment,openProductTool,renderStockLedger,renderPriceHistory,currencyLabel,renderTradeList,syncStockCount,previewStockCount,refreshStockCount,saveStockCount,showTransactionSaved,receiptMarkup,printMarkup,printTransaction,historyReceiptMarkup,printHistory,operationalPanel,resetDocumentMenu,openDocumentList,renderNotes,openNoteModal,reloadNote,saveNoteEntry,navigateToModule,goBack,alignDescriptionSpacing,setPageDescription,setEntryDescription,navigationIcon,navigationCard,moduleSubtitle,setupHomeNavigation,setupModuleNavigation,resetModulePage,openModule,syncHeaderOffset});
 </script><dialog id="unitDialog" class="record-dialog compact-dialog" aria-labelledby="unitTitle"><div class="detail-header"><div><div class="eyebrow">Stok</div><h2 id="unitTitle">Birimler</h2></div><button type="button" class="detail-close" aria-label="Birimleri kapat" id="closeUnits">×</button></div><div class="detail-body"><form id="unitForm"><label>Birim<select id="unitChoice"><option value="">+ Yeni birim</option></select></label><label>Birim adı<input id="unitName" maxlength="20" required></label><label class="checkrow"><input id="unitDecimal" type="checkbox"><span>Ondalıklı miktar kullanılabilir</span></label><div class="actions modal-actions"><div class="modal-main-actions"><button id="cancelUnit" type="button">Vazgeç</button><button class="primary" type="submit">Birimi kaydet</button></div></div></form></div></dialog><script>
 document.getElementById('closeUnits').onclick=document.getElementById('cancelUnit').onclick=()=>document.getElementById('unitDialog').close();
 document.getElementById('manageUnits').addEventListener('click',()=>window.openUnitSettings());

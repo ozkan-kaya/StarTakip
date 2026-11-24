@@ -12,7 +12,7 @@ export function preserveForms(draw){
   if(active?.isConnected&&document.activeElement!==active)active.focus({preventScroll:true});
   window.scrollTo({left:x,top:y,behavior:'instant'});
 }
-export function installFreshnessUI({bridge,getState,getScopes,beginLoading,notice}){
+export function installFreshnessUI({bridge,getState,getScopes,needsTableData,notice}){
   const bypass=new WeakSet();let ticket=0,resumePending=null;
   async function check(scopes,{notify=true}={}){
     if(!getState()||!navigator.onLine)return;
@@ -44,12 +44,13 @@ export function installFreshnessUI({bridge,getState,getScopes,beginLoading,notic
   document.addEventListener('click',event=>{
     const button=event.target.closest('button,a');
     if(!button||button.disabled||bypass.has(button)||!getState()||button.closest('.pin-dialog,#profileDialog')||!needsCheck(button))return;
-    event.preventDefault();event.stopImmediatePropagation();const intent=++ticket;let finish=()=>{};
-    const timer=setTimeout(()=>{if(intent===ticket)finish=beginLoading();},120);
+    const intent=++ticket;
+    if(needsTableData(button))return;
+    event.preventDefault();event.stopImmediatePropagation();
     let waitTimer;
     const timeout=new Promise(resolve=>{waitTimer=setTimeout(resolve,5000);});
     Promise.race([check(scopesFor(button)),timeout]).catch(()=>{}).finally(()=>{
-      clearTimeout(timer);clearTimeout(waitTimer);finish();if(intent!==ticket)return;
+      clearTimeout(waitTimer);if(intent!==ticket)return;
       const target=replacement(button);if(!target||target.disabled)return;
       bypass.add(target);try{target.click();}finally{bypass.delete(target);}
     });
