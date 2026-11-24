@@ -1,26 +1,32 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import {initializeAuth,GoogleAuthProvider,signInWithPopup,signOut,browserLocalPersistence,browserPopupRedirectResolver,connectAuthEmulator,onAuthStateChanged,reauthenticateWithPopup,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import {initializeAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,browserLocalPersistence,browserPopupRedirectResolver,connectAuthEmulator,onAuthStateChanged,reauthenticateWithPopup,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import * as firestore from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 import {createDomain} from './domain.mjs?v=app-20261119-1';
 import {createStore} from './store.mjs?v=app-20261120-1';
 import {createPinSecurity} from './pin-security.mjs?v=app-20261119-1';
 import {createFreshness} from './freshness.mjs?v=app-20261123-3';
 const ALLOWED_EMAILS=new Set(['company@example.invalid','authorized-user@example.invalid']);
-export async function createFirebaseBridge(){
+const POPUP_REDIRECT_ERRORS=new Set(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request']);
+function prefersGoogleRedirect(){
+  return navigator.standalone===true||window.matchMedia?.('(display-mode: standalone)').matches||
+    /iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+}
+export async function createFirebaseBridge({authRedirect,logAuth=()=>{}}={}){
   const controller=new AbortController(),configTimer=setTimeout(()=>controller.abort(),12000);
   let config;
   try{const response=await fetch('/config.json',{signal:controller.signal});if(!response.ok)throw new Error('Firebase ayarları okunamadı.');config=await response.json();}finally{clearTimeout(configTimer);}
-  // Restore the existing local session without eagerly opening the OAuth iframe
-  // on Safari/iOS. The resolver is only needed after an explicit sign-in click.
+  // Keep local Auth persistence and pass the resolver only to the active sign-in flow.
   const app=initializeApp(config),auth=initializeAuth(app,{persistence:browserLocalPersistence}),db=firestore.getFirestore(app);
   if(['localhost','127.0.0.1'].includes(location.hostname)&&new URLSearchParams(location.search).has('emulator')){
     connectAuthEmulator(auth,'http://127.0.0.1:9098',{disableWarnings:true});firestore.connectFirestoreEmulator(db,'127.0.0.1',8088);
   }
-  let authTimer;
-  try{await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{authTimer=setTimeout(()=>reject(new Error('Oturum kontrolü tamamlanamadı. Lütfen yeniden deneyin.')),12000);})]);}finally{clearTimeout(authTimer);}
+  if(!authRedirect?.pending){
+    let authTimer;
+    try{await Promise.race([auth.authStateReady(),new Promise((_,reject)=>{authTimer=setTimeout(()=>reject(new Error('Oturum kontrolü tamamlanamadı. Lütfen yeniden deneyin.')),12000);})]);}finally{clearTimeout(authTimer);}
+  }
   const domain=createDomain(()=>user().email.toLowerCase()),security=createPinSecurity(firestore,db,user),store=createStore(firestore,db,domain,security),loadedViews=new Map();
   let identity=auth.currentUser?.uid||'',generation=0,stopLastOperation=null;
-  const bridge={onPatch:null,onError:null,security};
+  const bridge={onPatch:null,onError:null,onAuthState:null,security};
   const scopeNames={products:['products','units'],parties:['parties'],ledger:['products','units','parties','transactions','companyVersions'],notes:['notes'],company:['companyVersions']};
   const stamp=value=>value?.toDate?value.toDate().toISOString():'';
   const metaRef=firestore.doc(db,'system/state');
@@ -58,8 +64,47 @@ export async function createFirebaseBridge(){
     return current;
   }
   const profile=()=>{const u=user();return {email:u.email,name:u.displayName||'Google hesabı',picture:u.photoURL||''};};
-  onAuthStateChanged(auth,current=>{if(identity!==(current?.uid||'')){identity=current?.uid||'';clear();if(!current)bridge.onError?.(new Error('AUTH_REQUIRED'));}});
-  bridge.login=async()=>{const result=await signInWithPopup(auth,new GoogleAuthProvider(),browserPopupRedirectResolver);try{user();}catch(error){await signOut(auth);throw error;}return result.user;};
+  let rejectedLoginSignOut=null;
+  async function validateLogin(){
+    try{return user();}
+    catch(error){
+      if(auth.currentUser){
+        if(!rejectedLoginSignOut)rejectedLoginSignOut=signOut(auth).finally(()=>{rejectedLoginSignOut=null;});
+        await rejectedLoginSignOut;
+      }
+      throw error;
+    }
+  }
+  bridge.validateLogin=validateLogin;
+  bridge.hasAuthUser=()=>!!auth.currentUser;
+  onAuthStateChanged(auth,current=>{
+    logAuth('auth-state',current?'signed-in':'signed-out');
+    if(identity!==(current?.uid||'')){
+      identity=current?.uid||'';clear();
+      if(!current)bridge.onError?.(new Error('AUTH_REQUIRED'));
+    }
+    if(current)bridge.onAuthState?.();
+  });
+  function redirectLogin(provider){
+    authRedirect.mark();
+    logAuth('redirect-start');
+    return signInWithRedirect(auth,provider,browserPopupRedirectResolver);
+  }
+  bridge.login=({isCurrent=()=>true}={})=>{
+    const provider=new GoogleAuthProvider(),redirect=authRedirect&&prefersGoogleRedirect();
+    logAuth('login-start',redirect?'redirect':'popup');
+    if(redirect)return redirectLogin(provider);
+    return signInWithPopup(auth,provider,browserPopupRedirectResolver).then(validateLogin,error=>{
+      if(!authRedirect||!isCurrent()||!POPUP_REDIRECT_ERRORS.has(error.code))throw error;
+      logAuth('error.code',error.code);
+      return redirectLogin(provider);
+    });
+  };
+  bridge.completeAuthRedirect=async()=>{
+    const result=await getRedirectResult(auth,browserPopupRedirectResolver);
+    logAuth('redirect-result',result?'received':'empty');
+    if(result)await validateLogin();
+  };
   function watchLastOperation(){
     if(stopLastOperation)return;const epoch=generation;
     stopLastOperation=firestore.onSnapshot(metaRef,{includeMetadataChanges:true},snapshot=>{

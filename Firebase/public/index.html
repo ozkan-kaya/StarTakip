@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-6"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#173c35"><meta name="apple-mobile-web-app-title" content="Star Takip">
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><title>Star Takip</title><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="modulepreload" href="/adapter.mjs?v=app-20261123-7"><link rel="icon" href="/favicon.ico?v=star-transparent-2" sizes="any"><link rel="icon" type="image/svg+xml" href="/favicon.svg?v=star-transparent-2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=star-transparent-2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#173c35"><meta name="apple-mobile-web-app-title" content="Star Takip">
 <style>
 :root{--ink:#173c35;--text:#243e36;--muted:#6b7c74;--paper:#f5f7f3;--line:#e2e8e1;--accent:#d4e7ad;--border-hover:#d4e7ad66;--red:#ab4e42;--shadow:0 2px 4px #173c3502,0 8px 28px #173c3504;
   /* Design tokens — stage 1: definitions only; existing rules stay unchanged. */
@@ -875,13 +875,15 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 #authScreen #authMessage{width:100%;font-size:13px;line-height:1.5;text-align:center;overflow-wrap:anywhere;margin:var(--s-4) 0 0;color:var(--muted)}
 #authScreen #authMessage:empty{display:none}
 #authScreen #authRetry{margin-top:var(--s-4)}
+#authScreen:not([hidden]):has(#authDiagnostics:not([hidden])){flex-direction:column;gap:var(--s-3);overflow:auto}
+#authDiagnostics{width:100%;max-width:400px;max-height:128px;overflow:auto;margin:0;padding:var(--s-3);border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);font-size:11px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
 #authScreen #authMessage.hint.error{padding:var(--s-3);border:1px solid var(--red-line);border-radius:var(--radius-sm);background:var(--red-bg);color:var(--red-text)}
 @media(max-width:600px){#authScreen>.card{padding:var(--s-6)}}
 
 .sync-times{display:flex;flex-direction:column;gap:3px;min-width:0}
 </style><script src="/compact-dialog-layout.js?v=app-20261119-1"></script><script src="/receipt-layout.js?v=a5-landscape-36"></script></head><body>
 
-<header><div><h1><a class="brand" id="brandHome" href="javascript:void(0)" aria-label="Star Takip" onclick="show('home');return false;"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></a></h1></div><nav aria-label="Ana menü" hidden><button data-tab="transactions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></svg>İşlemler</button><button data-tab="parties"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m18 0v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Cari</button><button data-tab="products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Zm0 10 9-5M12 13 3 8m9 5v8M7.5 5.5l9 5"/></svg>Stok</button></nav><div class="header-account" hidden><button type="button" id="account" class="profile-trigger" aria-label="Profilinizi açın" onclick="openProfile()" disabled><span class="avatar-fallback" aria-hidden="true">★</span></button></div></header><div id="authScreen" class="auth-screen" hidden><div class="card"><div class="auth-brand" aria-label="Star Takip"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></div><div id="authLogin"><h2>Hesabınızla giriş yapın</h2><p class="auth-description">Bu uygulama yalnızca yetkili hesaplar içindir.</p><button type="button" class="primary" id="signInButton" onclick="firebaseSignIn()"><span class="auth-google-badge" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.61 24.46c0-1.36-.12-2.66-.35-3.92H24v7.43h11a9.4 9.4 0 0 1-4.08 6.16v5h6.61c3.87-3.56 6.08-8.81 6.08-14.67Z"/><path fill="#34A853" d="M24 44c5.5 0 10.12-1.82 13.5-4.87l-6.6-5c-1.83 1.23-4.18 1.97-6.9 1.97-5.3 0-9.8-3.58-11.4-8.4H5.78v5.16A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.7a12.3 12.3 0 0 1 0-7.4v-5.16H5.78a20 20 0 0 0 0 17.72l6.82-5.16Z"/><path fill="#EA4335" d="M24 11.9c3 0 5.68 1.03 7.8 3.05l5.85-5.86A19.6 19.6 0 0 0 24 4 20.4 20.4 0 0 0 5.78 15.14l6.82 5.16c1.6-4.82 6.1-8.4 11.4-8.4Z"/></svg></span><span class="auth-button-label">Google hesabıyla giriş yap</span><span class="auth-button-pending"><span class="loading-spinner" aria-hidden="true"></span>Giriş yapılıyor…</span></button><p id="authMessage" role="status" aria-live="polite"></p></div></div></div>
+<header><div><h1><a class="brand" id="brandHome" href="javascript:void(0)" aria-label="Star Takip" onclick="show('home');return false;"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></a></h1></div><nav aria-label="Ana menü" hidden><button data-tab="transactions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></svg>İşlemler</button><button data-tab="parties"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m18 0v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Cari</button><button data-tab="products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Zm0 10 9-5M12 13 3 8m9 5v8M7.5 5.5l9 5"/></svg>Stok</button></nav><div class="header-account" hidden><button type="button" id="account" class="profile-trigger" aria-label="Profilinizi açın" onclick="openProfile()" disabled><span class="avatar-fallback" aria-hidden="true">★</span></button></div></header><div id="authScreen" class="auth-screen" hidden><div class="card"><div class="auth-brand" aria-label="Star Takip"><span>Star</span><svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.95 5.98 6.6.96-4.78 4.66 1.13 6.57L12 17.47l-5.9 3.1 1.13-6.57L2.45 9.34l6.6-.96Z"/></svg><span class="brand-name">Takip</span></div><div id="authLogin"><h2>Hesabınızla giriş yapın</h2><p class="auth-description">Bu uygulama yalnızca yetkili hesaplar içindir.</p><button type="button" class="primary" id="signInButton" onclick="firebaseSignIn()"><span class="auth-google-badge" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.61 24.46c0-1.36-.12-2.66-.35-3.92H24v7.43h11a9.4 9.4 0 0 1-4.08 6.16v5h6.61c3.87-3.56 6.08-8.81 6.08-14.67Z"/><path fill="#34A853" d="M24 44c5.5 0 10.12-1.82 13.5-4.87l-6.6-5c-1.83 1.23-4.18 1.97-6.9 1.97-5.3 0-9.8-3.58-11.4-8.4H5.78v5.16A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.7a12.3 12.3 0 0 1 0-7.4v-5.16H5.78a20 20 0 0 0 0 17.72l6.82-5.16Z"/><path fill="#EA4335" d="M24 11.9c3 0 5.68 1.03 7.8 3.05l5.85-5.86A19.6 19.6 0 0 0 24 4 20.4 20.4 0 0 0 5.78 15.14l6.82 5.16c1.6-4.82 6.1-8.4 11.4-8.4Z"/></svg></span><span class="auth-button-label">Google hesabıyla giriş yap</span><span class="auth-button-pending"><span class="loading-spinner" aria-hidden="true"></span>Giriş yapılıyor…</span></button><p id="authMessage" role="status" aria-live="polite"></p></div></div><pre id="authDiagnostics" aria-label="Google giriş tanı kayıtları" hidden></pre></div>
 <main hidden><div id="notice" class="hint" role="status" hidden></div>
 <div class="app-date-bar"><div id="homeDate" class="date-caption"></div></div>
 <section id="home" hidden>
@@ -912,16 +914,77 @@ body:has(#authScreen:not([hidden]))>header{display:none}
 <dialog id="quickMasterDialog" class="record-dialog" aria-labelledby="quickMasterTitle"><div class="detail-header"><div><div class="eyebrow">Hızlı ekle</div><h2 id="quickMasterTitle"></h2></div><button id="quickMasterClose" type="button" class="detail-close" aria-label="Hızlı eklemeyi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="detail-body"><div id="quickMasterError" class="hint error" role="alert" hidden></div><div id="quickMasterHost"></div></div></dialog>
 <div id="loadingScreen" class="loading-screen" popover="manual" hidden role="status" aria-live="polite" aria-atomic="true"><div class="loading-content"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-message">Yükleniyor…</p></div></div>
 <script>
+const authRedirectKey='authRedirectPending',authDebugKey='starAuthDebugLog';
+const authReturnParams=new URLSearchParams(location.search);
+const authDebugEnabled=authReturnParams.get('debug')==='1';
+const authReturnError='Giriş tamamlanamadı. Lütfen tekrar deneyin.';
+const authRedirectPending=(()=>{
+  if(authReturnParams.get(authRedirectKey)==='1')return true;
+  try{
+    const started=Number(sessionStorage.getItem(authRedirectKey));
+    return started>0&&Date.now()-started<15*60*1000;
+  }catch{return false;}
+})();
+function updateAuthReturnUrl(pending){
+  try{
+    const url=new URL(location.href);
+    if(pending)url.searchParams.set(authRedirectKey,'1');else url.searchParams.delete(authRedirectKey);
+    if(url.href!==location.href)history.replaceState(history.state,'',url);
+  }catch{}
+}
+window.starAuthRedirect={
+  pending:authRedirectPending,
+  timeLeft:()=>Math.max(0,8000-performance.now()),
+  message:authReturnError,
+  mark(){
+    try{sessionStorage.setItem(authRedirectKey,String(Date.now()));}catch{}
+    // Keep a return hint in the redirect URL when iOS drops this tab's session storage.
+    updateAuthReturnUrl(true);
+  },
+  clear(){
+    try{sessionStorage.removeItem(authRedirectKey);}catch{}
+    updateAuthReturnUrl(false);
+  }
+};
+const authDiagnostics=document.getElementById('authDiagnostics');
+let authDebugLines=[];
+if(authDebugEnabled&&authRedirectPending){
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(authDebugKey)||'[]');
+    if(Array.isArray(saved))authDebugLines=saved.filter(line=>typeof line==='string').slice(-10);
+  }catch{}
+}
+window.starAuthLog=(event,detail='')=>{
+  if(!authDebugEnabled)return;
+  const line=new Date().toISOString().slice(11,23)+' '+event+(detail?' '+detail:'');
+  console.debug('[StarTakip Auth]',line);
+  authDebugLines=[...authDebugLines.slice(-9),line];
+  authDiagnostics.textContent=authDebugLines.join('\n');
+  authDiagnostics.hidden=false;authDiagnostics.scrollTop=authDiagnostics.scrollHeight;
+  try{sessionStorage.setItem(authDebugKey,JSON.stringify(authDebugLines));}catch{}
+};
+if(authRedirectPending){
+  const screen=document.getElementById('authScreen'),login=document.getElementById('signInButton');
+  screen.hidden=false;screen.setAttribute('aria-busy','true');
+  login.disabled=true;login.setAttribute('data-loading','');login.setAttribute('aria-busy','true');
+}
 let startupPending=true;
 window.starStartupFailed=message=>{
   if(!startupPending)return;
   const screen=document.getElementById('authScreen'),login=document.getElementById('signInButton');
   clearTimeout(window.starBootTimer);
   screen.setAttribute('aria-busy','false');login.setAttribute('aria-busy','false');login.removeAttribute('data-loading');
+  if(authRedirectPending){
+    window.starAuthRedirect.clear();
+    window.starAuthLog('error.code','auth/redirect-startup-incomplete');
+    document.getElementById('authMessage').textContent=authReturnError;
+    window.firebaseSignIn=()=>window.location.reload();login.disabled=false;
+    return;
+  }
   document.getElementById('authMessage').textContent=typeof message==='string'?message:'Panel başlatılamadı. Lütfen yeniden deneyin.';
   if(!document.getElementById('authRetry')){const retry=document.createElement('button');retry.id='authRetry';retry.type='button';retry.textContent='Yeniden dene';retry.onclick=()=>window.location.reload();document.getElementById('authMessage').after(retry);}
 };
-window.starBootTimer=setTimeout(()=>window.starStartupFailed('Bağlantı kurulması beklenenden uzun sürdü. Yeniden deneyebilirsiniz.'),15000);
+window.starBootTimer=setTimeout(()=>window.starStartupFailed('Bağlantı kurulması beklenenden uzun sürdü. Yeniden deneyebilirsiniz.'),authRedirectPending?window.starAuthRedirect.timeLeft():15000);
 window.starStartupReady=()=>{startupPending=false;clearTimeout(window.starBootTimer);document.getElementById('authRetry')?.remove();};
 window.addEventListener('error',window.starStartupFailed);
 window.addEventListener('unhandledrejection',window.starStartupFailed);
@@ -943,12 +1006,13 @@ document.addEventListener('click',event=>{
 },true);
 </script>
 <script src="/entry-search.js?v=app-20261119-1"></script><script type="module">
-import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-6';
+import {createFirebaseBridge} from '/adapter.mjs?v=app-20261123-7';
 import {installPinUI} from '/pin-ui.mjs?v=app-20261119-1';
 import * as companyModel from '/company.mjs?v=app-20261119-1';
 window.starCompanyModel=companyModel;
 import {installFreshnessUI,preserveForms} from '/freshness-ui.mjs?v=app-20261123-3';
-window.starFirebase=await createFirebaseBridge().catch(error=>{window.starStartupFailed?.();throw error;});
+const authRedirect=window.starAuthRedirect,logAuth=window.starAuthLog;
+window.starFirebase=await createFirebaseBridge({authRedirect,logAuth}).catch(error=>{window.starStartupFailed?.();throw error;});
 const companyBackend={
   read:()=>window.starFirebase.call('getCompanyState'),
   save:input=>companyMutation('saveCompanyVersion',input),
@@ -1571,7 +1635,7 @@ async function openProfile(){
 }
 function setAuthLoading(loading){$('authLogin').hidden=false;$('authScreen').setAttribute('aria-busy',String(loading));$('signInButton').disabled=loading;$('signInButton').toggleAttribute('data-loading',loading);$('signInButton').setAttribute('aria-busy',String(loading));}
 function routeToLogin(){
-  const url=new URL(window.location.href);url.pathname=routeBase+'/login';url.hash='';url.search='';
+  const url=new URL(window.location.href);url.pathname=routeBase+'/login';url.hash='';url.search=url.searchParams.get('debug')==='1'?'?debug=1':'';
   if(url.href!==window.location.href)window.history.replaceState({login:true},'',url);
   document.title='Giriş · Star Takip';
 }
@@ -1585,34 +1649,67 @@ function lockApp(message='',{redirect=true}={}){window.starFreshnessUI?.clear();
   tablePages.clear();stockCountExpected=null;pendingCountId=null;document.querySelectorAll('#metrics,#recent,#partyList,#productList,#historyList,#paymentList,#documentList,#reportMetrics,#reportProducts,#reportMethods,#reportParties,#stockHistoryList,#priceHistoryList,#priceHistorySummary,#tradeList,#partyMovementList,#generalList,#noteList').forEach(el=>el.replaceChildren());
 }
 function unlockApp(){document.querySelector('main').hidden=false;document.querySelector('header nav').hidden=false;document.querySelector('.header-account').hidden=false;$('authScreen').hidden=true;}
-let googleSignInAttempt=null;
+let googleSignInAttempt=null,signInPending=null,redirectProcessing=authRedirect.pending;
+function logAuthFailure(error){
+  const code=typeof error?.code==='string'&&/^auth\/[a-z0-9-]+$/.test(error.code)?error.code:
+    /^AUTH_(?:REQUIRED|DENIED)/.exec(String(error?.message||''))?.[0]||'unknown';
+  logAuth('error.code',code);
+}
+function stopGoogleSignIn(){
+  clearTimeout(googleSignInAttempt?.timer);
+  googleSignInAttempt=null;
+}
 async function firebaseSignIn(){
-  if(busy||$('signInButton').disabled)return;
-  const attempt=Symbol();
+  if(busy||signInPending||$('signInButton').disabled)return;
+  const attempt={timer:null};
   googleSignInAttempt=attempt;
   setAuthLoading(true);
   $('authMessage').textContent='';
-  const timer=setTimeout(()=>{
+  attempt.timer=setTimeout(()=>{
     if(googleSignInAttempt!==attempt)return;
+    stopGoogleSignIn();authRedirect.clear();
+    logAuth('error.code','auth/login-timeout');
     setAuthLoading(false);
     $('authMessage').textContent='Google girişi tamamlanamadı. Lütfen tekrar deneyin.';
   },30000);
   try{
-    await window.starFirebase.login();
-    clearTimeout(timer);
+    await window.starFirebase.login({isCurrent:()=>googleSignInAttempt===attempt});
     if(googleSignInAttempt===attempt)await signIn();
   }catch(error){
-    if(googleSignInAttempt===attempt)lockApp(String(error.message||error));
+    if(googleSignInAttempt===attempt){
+      authRedirect.clear();logAuthFailure(error);lockApp(String(error.message||error));
+    }
   }finally{
-    clearTimeout(timer);
-    if(googleSignInAttempt===attempt){googleSignInAttempt=null;setAuthLoading(false);}
+    if(googleSignInAttempt===attempt){stopGoogleSignIn();setAuthLoading(false);}
   }
 }
-async function signIn(){
-  if(busy)return;setAuthLoading(true);$('signInButton').disabled=true;$('authMessage').textContent='';
-  
-  try{const restoreExistingNavigation=navigationReady,fromLogin=getPathContext().path==='/login';const session=await call('beginSession');sessionToken=session.token;currentProfile=session.profile;clearDataCache();state=session.appState||await call('getAppState');unlockApp();const requestedPage=window.starPendingPage;if(fromLogin&&!requestedPage)writePageUrl('home','replace');render();void window.starFirebase.prefetch().catch(()=>{});if(fromLogin||restoreExistingNavigation){window.starPendingPage=null;show(requestedPage||(fromLogin?'home':activePage),{urlMode:'replace'});}try{sessionStorage.removeItem('starSignedOut');}catch{}notice('');}
-  catch(error){lockApp(String(error.message||error));}finally{$('signInButton').disabled=false;setAuthLoading(false);}
+function signIn(){
+  if(signInPending)return signInPending;
+  if(busy||state)return;
+  stopGoogleSignIn();
+  signInPending=beginAppSession().finally(()=>{signInPending=null;});
+  return signInPending;
+}
+async function finishRedirectSignIn(){
+  let timer,error;
+  try{
+    await Promise.race([
+      window.starFirebase.completeAuthRedirect(),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(new Error(authRedirect.message),{code:'auth/redirect-timeout'})),authRedirect.timeLeft());})
+    ]);
+    if(!window.starFirebase.hasAuthUser())throw Object.assign(new Error(authRedirect.message),{code:'auth/redirect-no-user'});
+  }catch(failure){
+    error=failure;logAuthFailure(failure);
+  }finally{
+    clearTimeout(timer);authRedirect.clear();redirectProcessing=false;setAuthLoading(false);
+  }
+  if(window.starFirebase.hasAuthUser())void signIn();
+  else if(error)lockApp(String(error.message||error));
+}
+async function beginAppSession(){
+  setAuthLoading(true);$('authMessage').textContent='';
+  try{await window.starFirebase.validateLogin();const restoreExistingNavigation=navigationReady,fromLogin=getPathContext().path==='/login';const session=await call('beginSession');sessionToken=session.token;currentProfile=session.profile;clearDataCache();state=session.appState||await call('getAppState');unlockApp();const requestedPage=window.starPendingPage;if(fromLogin&&!requestedPage)writePageUrl('home','replace');render();void window.starFirebase.prefetch().catch(()=>{});if(fromLogin||restoreExistingNavigation){window.starPendingPage=null;show(requestedPage||(fromLogin?'home':activePage),{urlMode:'replace'});}try{sessionStorage.removeItem('starSignedOut');}catch{}notice('');}
+  catch(error){if(!String(error.message||error).startsWith('AUTH_REQUIRED'))logAuthFailure(error);lockApp(String(error.message||error));}finally{setAuthLoading(false);}
 }
 async function signOut(){
   if(busy)return;setBusy(true);
@@ -3175,7 +3272,9 @@ function needsTableData(button){
 window.starFreshnessUI=installFreshnessUI({bridge:window.starFirebase,getState:()=>state,getScopes:()=>[...loadedDataScopes],needsTableData,notice:message=>notice(message)});
 for(const event of ['popstate','hashchange'])window.addEventListener(event,()=>{if(!state&&!$('authScreen').hidden)routeToLogin();});
 window.addEventListener('offline',handleOffline);window.addEventListener('online',()=>{if(connectionNotice){notice('');updateSyncStatus();}});if(!navigator.onLine)handleOffline();
-{window.starStartupReady();void signIn();}
+window.starStartupReady();
+window.starFirebase.onAuthState=()=>{if(!redirectProcessing)void signIn();};
+if(redirectProcessing)void finishRedirectSignIn();else void signIn();
 
 Object.assign(window,{saveVoidTransaction,openUnifiedEntry,unifiedEntryChanged,openPartyStatement,mergedHistoryScope,generalMovementRows,renderGeneralMovements,partyMovementRows,renderPartyMovements,openUnitSettings,selectUnitSettings,saveUnitSettings,openTransactionReceipt,syncProductUnitPolicy,syncProductUnitInputs,$,today,displayDate,displayDateTime,privatePartyBalance,balanceLines,setupKeyboardHints,setupDialogs,closeDialogs,showDialogAtTop,positionLoadingRegion,releaseLoadingRegion,updateLoadingRegions,clearForegroundLoading,beginForegroundLoading,hideNotice,notice,connectionError,normalizeFailure,moduleScopes,markDataLoaded,ensureDataScope,deferViewData,refreshLoadedData,callAndRefresh,clearDataCache,loadingFailure,call,callRequest,showActionError,handleOffline,setBusy,getPathContext,parseRoute,routePage,localRouteTarget,localRoutePage,writePageUrl,initializeNavigation,show,entryOptions,setEntryContext,historyView,transactionView,deferDialogData,openEntryModal,openTradeModal,openPaymentModal,configureEntryModal,stockModalChanged,openStockModal,openTransactionEntry,syncPartyOpening,resetPartyOpening,lookup,table,resetPageFilters,pagedTable,fillSelect,updateSyncStatus,avatarContent,renderProfile,openProfile,setAuthLoading,lockApp,unlockApp,firebaseSignIn,signIn,signOut,loadState,draftValue,restoreDraftValue,focusField,focusEntry,rememberKindDraft,restoreKindDraft,applyEntryDefaults,suggestedPrice,entryCurrencyChanged,updateBalanceSuggestion,shortcutForm,handleAppShortcut,openQuickMaster,transactionItems,readMainLine,entryLines,copyExtraLines,entryLineAmount,validEntryLine,lineOptions,enhanceLineNumbers,stepLineNumber,renderExtraLines,syncLineButtons,remainingLineStock,updateLineTotals,addItemLine,removeItemLine,updateExtraInput,validateStockEntry,renderTransactionProducts,renderMovementPartyProducts,renderTransactionItems,syncFormChoices,render,recordLink,detailGrid,detailSection,detailTime,detailQuantity,detailMovements,renderRecordDetail,openRecordDetail,financialSummaryAt,renderSummary,kindChanged,lineCurrencyChanged,productChanged,enablePaymentSwitchDrag,methodChanged,preview,closeMasterModal,openPartyModal,openProductModal,resetMaster,editMaster,renderParties,renderProducts,statusTag,documentTag,movementMethodLabel,effectiveDate,historyPreset,calculateHistoryRows,renderHistory,setupMovementFilters,movementFilterOptions,filterPaymentMovements,renderDocuments,renderPayments,promptArchiveMaster,executeMasterLifecycle,bindActions,mutate,voidTx,historyCsvRows,exportCsv,metricCard,calculateReport,reportPresetStart,reportPreset,renderReports,exportReport,operationOrder,stockLedgerRows,priceHistoryRows,syncPeriodSelection,periodFor,openPartyPayment,openProductTool,renderStockLedger,renderPriceHistory,currencyLabel,renderTradeList,syncStockCount,previewStockCount,refreshStockCount,saveStockCount,showTransactionSaved,receiptMarkup,printMarkup,printTransaction,historyReceiptMarkup,printHistory,operationalPanel,resetDocumentMenu,openDocumentList,renderNotes,openNoteModal,reloadNote,saveNoteEntry,navigateToModule,goBack,alignDescriptionSpacing,setPageDescription,setEntryDescription,navigationIcon,navigationCard,moduleSubtitle,setupHomeNavigation,setupModuleNavigation,resetModulePage,openModule,syncHeaderOffset});
 </script><dialog id="unitDialog" class="record-dialog compact-dialog" aria-labelledby="unitTitle"><div class="detail-header"><div><div class="eyebrow">Stok</div><h2 id="unitTitle">Birimler</h2></div><button type="button" class="detail-close" aria-label="Birimleri kapat" id="closeUnits">×</button></div><div class="detail-body"><form id="unitForm"><label>Birim<select id="unitChoice"><option value="">+ Yeni birim</option></select></label><label>Birim adı<input id="unitName" maxlength="20" required></label><label class="checkrow"><input id="unitDecimal" type="checkbox"><span>Ondalıklı miktar kullanılabilir</span></label><div class="actions modal-actions"><div class="modal-main-actions"><button id="cancelUnit" type="button">Vazgeç</button><button class="primary" type="submit">Birimi kaydet</button></div></div></form></div></dialog><script>
