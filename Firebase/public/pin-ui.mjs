@@ -1,4 +1,4 @@
-import {installSettingsUI} from './settings-ui.mjs?v=app-20261124-4';
+import {installSettingsUI} from './settings-ui.mjs?v=app-20261124-5';
 export function installPinUI(security,{demo=false,clearLoading=()=>{},notice=()=>{},company}={}){
   const make=(id,title,body)=>{
     const d=document.createElement('dialog');d.id=id;d.className='record-dialog compact-dialog pin-dialog'+(id==='pinRemoveDialog'?' dialog-compact':'');
@@ -313,27 +313,39 @@ dialog.record-dialog.pin-dialog {
   function error(d,e,selector='[data-error]'){const el=q(d,selector);el.textContent=String(e.message||e);el.hidden=false;}
   async function busy(d,task){const controls=[...d.querySelectorAll('button,input,select')],states=controls.map(el=>el.disabled);controls.forEach(el=>el.disabled=true);try{return await task();}finally{controls.forEach((el,i)=>el.disabled=states[i]);}}
   function validate(o){if(!validPin(o.pin,o.length))throw new Error(o.length+' haneli, yalnız rakamlardan oluşan PIN girin.');if(o.pin!==o.confirm)throw new Error('Yeni PIN girişleri eşleşmiyor.');}
-  async function refresh(){
-    config=await security.settings();settings.dataset.pinEnabled=String(config.enabled);q(settings,'[data-status]').textContent=config.enabled?config.length+' haneli PIN tanımlı.':'PIN tanımlı değil.';
+  function applySettings(current){
+    config=current;settings.dataset.pinEnabled=String(config.enabled);q(settings,'[data-status]').textContent=config.enabled?config.length+' haneli PIN tanımlı.':'PIN tanımlı değil.';
     for(const group of ['create','edit','remove','daily']){const el=q(settings,'[name='+group+']');el.checked=config[group];el.disabled=!config.enabled;}
     q(settings,'[name=interval]').value=String(config.interval||0);q(settings,'[name=interval]').disabled=!config.enabled;
     const actionBar=q(settings,'[data-pin-actions]');actionBar.classList.toggle('pin-settings-footer',config.enabled);if(config.enabled)settings.append(actionBar);else q(settings,'.pin-content').insertBefore(actionBar,q(settings,'form'));
     q(settings,'[data-change]').textContent=config.enabled?'PIN’i değiştir':'PIN oluştur';q(settings,'[data-remove]').hidden=!config.enabled;
   }
+  async function refresh(){
+    applySettings(await security.settings());
+  }
+  let prefetchedSettings=null;
+  function prepareSecurity(){
+    const read={startedAt:performance.now(),request:security.settings()};
+    prefetchedSettings=read;
+    void read.request.catch(()=>{if(prefetchedSettings===read)prefetchedSettings=null;});
+  }
   async function open(leaveMenu){
     let leftMenu=false;
     try{
-      const current=await security.settings();
-      let key=null;
+      const prefetched=prefetchedSettings;
+      prefetchedSettings=null;
+      const current=await (prefetched&&performance.now()-prefetched.startedAt<3000?prefetched.request:security.settings());
+      let key=null,next=current;
       if(current.enabled){
         if(!leaveMenu())return;
         leftMenu=true;
         settingsKey=null;
         key=await security.requestPin(current,pin=>security.check(pin,current));
+        next=await security.settings();
       }
-      await refresh();
       if(leftMenu?document.querySelector('dialog[open]'):!leaveMenu())return;
       leftMenu=true;
+      applySettings(next);
       settingsKey=key;
       show(settings);
     }catch(e){
@@ -409,7 +421,7 @@ dialog.record-dialog.pin-dialog {
     const changeResize=new window.ResizeObserver(updateChangeScroll);changeResize.observe(changeBody);changeResize.observe(q(change,'form'));
   }
   settings.addEventListener('close',()=>{settingsKey=null;});
-  const settingsMenu=installSettingsUI({openSecurity:open,company,notice});
+  const settingsMenu=installSettingsUI({openSecurity:open,prepareSecurity,company,notice});
   const button=document.createElement('button');button.type='button';button.textContent='Ayarlar';button.onclick=settingsMenu.open;
   const profile=document.querySelector('#profileDialog'),footer=document.createElement('div'),logout=profile.querySelector('.profile-logout');
   const icon=paths=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths+'</svg>';

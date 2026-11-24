@@ -1,6 +1,6 @@
 import locations from './locations.mjs?v=app-20261119-1';
 import {companyFields,currentCompany,initialCompany,normalizeCompany,sameCompany} from './company.mjs?v=app-20261119-1';
-export function installSettingsUI({openSecurity,company,notice=()=>{}}){
+export function installSettingsUI({openSecurity,prepareSecurity,company,notice=()=>{}}){
   function make(id,title,body){
     const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog'+(id==='companyRegenerateDialog'?' dialog-compact':'');dialog.setAttribute('aria-labelledby',id+'Title');
     dialog.dataset.customBackdrop='';
@@ -31,7 +31,9 @@ export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   function dirty(){try{save.disabled=saving||!baseline||sameCompany(normalizeCompany(values()),baseline);}catch{save.disabled=true;}}
   let menuGeneration=0;
   function showMenu(){
-    if(!menu.open){menu.showModal();menuGeneration++;}
+    if(menu.open)return;
+    menu.showModal();menuGeneration++;
+    prepareSecurity();
   }
   function back(){if(saving)return;formDialog.close();showMenu();}
   menu.querySelector('[data-back]').onclick=()=>{menu.close();document.querySelector('#profileDialog').showModal();};
