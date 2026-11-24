@@ -33,7 +33,7 @@ export async function createReceiptPdf(html,title,format='a5'){
     await loaded;
     const doc=frame.contentDocument, root=doc.querySelector('.receipt-offer');
     if(!root)throw new Error('İşlem dökümü bulunamadı.');
-    const author=root.querySelector('.receipt-seller h2')?.textContent||'Star Takip';
+    const author=doc.querySelector('meta[name="author"]')?.content||'Star Takip';
     if(doc.fonts)await doc.fonts.ready;
     const pages=layout.paginate(root,paper.format);
     const pdf=new window.jspdf.jsPDF({orientation:paper.orientation,unit:'mm',format:paper.format,compress:true});
