@@ -3,6 +3,7 @@ import {companyFields,currentCompany,initialCompany,normalizeCompany,sameCompany
 export function installSettingsUI({openSecurity,company,notice=()=>{}}){
   function make(id,title,body){
     const dialog=document.createElement('dialog');dialog.id=id;dialog.className='record-dialog compact-dialog settings-menu-dialog'+(id==='companyRegenerateDialog'?' dialog-compact':'');dialog.setAttribute('aria-labelledby',id+'Title');
+    dialog.dataset.customBackdrop='';
     dialog.innerHTML='<div class="detail-header"><div><button type="button" class="detail-back" data-back>← Geri</button><div class="eyebrow">Ayarlar</div><h2 id="'+id+'Title">'+title+'</h2></div><button type="button" class="detail-close" aria-label="Kapat">×</button></div><div class="detail-body">'+body+'</div>';
     dialog.querySelector('.detail-close').onclick=()=>dialog.close();
     let outsideStart=false;
