@@ -1,6 +1,6 @@
 {
   "apiKey": "REPLACE_WITH_FIREBASE_WEB_API_KEY",
-  "authDomain": "startakip9.firebaseapp.com",
+  "authDomain": "startakip9.web.app",
   "projectId": "startakip9",
   "storageBucket": "example-project-id.firebasestorage.app",
   "messagingSenderId": "REPLACE_WITH_SENDER_ID",
