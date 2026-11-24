@@ -13,7 +13,7 @@ Firebase Authentication, Cloud Firestore ve Firebase Hosting kullanır.
 ## Kurulum
 
 1. Firebase projesinde Google girişini, Firestore Standard veritabanını ve Hosting'i etkinleştirin.
-2. `Firebase/public/config.example.json` dosyasını `config.json` olarak kopyalayıp kendi Firebase web ayarlarınızı girin.
+2. `Firebase/public/config.example.json` dosyasını `config.json` olarak kopyalayıp kendi Firebase web ayarlarınızı girin. Firebase Console’dan SDK ayarlarını yeniden alırsanız, gerçek `Firebase/public/config.json` dosyasında `authDomain` değerini `startakip9.web.app` olarak koruyun.
 3. `Firebase/.firebaserc.example` dosyasını `.firebaserc` olarak kopyalayıp proje kimliğini girin; `Firebase/firebase.json` içindeki `hosting.site` alanını da kendi site kimliğinizle değiştirin.
 4. `adapter.mjs` ve `firestore.rules` içindeki örnek izinli hesapları birlikte düzenleyin; istemci kontrolü ve veritabanı kuralları aynı hesaplara izin vermelidir.
 5. Firma başlangıç bilgileri örnek değerlerdir; `company.mjs` ve kurallardaki v1 değerlerini birlikte uyarlayın, kaydedilmiş geçmiş sürümleri değiştirmeyin.
